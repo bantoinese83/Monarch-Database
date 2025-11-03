@@ -6,7 +6,7 @@
  */
 
 import { Document } from '../types';
-import { ValidationError, DataIntegrityError } from '../errors';
+import { ValidationError, DataIntegrityError, ResourceLimitError } from '../errors';
 import { LIMITS, ERROR_MESSAGES } from '../constants';
 
 export class DocumentValidator {
