@@ -1,0 +1,27 @@
+<svg width="64" height="64" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="iconBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#6B46C1;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1E3A8A;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="iconCrown" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#FFD700;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#FFA500;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+
+  <!-- Background circle -->
+  <circle cx="32" cy="32" r="30" fill="url(#iconBg)" stroke="#E5E7EB" stroke-width="2"/>
+
+  <!-- Crown -->
+  <path d="M32 18 L28 14 L30 16 L26 12 L28 14 L24 10 L26 12 L22 8 L24 10 L20 14 L22 16 L18 12 L20 14 L16 18 L32 18 Z"
+        fill="url(#iconCrown)"
+        stroke="#FFD700"
+        stroke-width="0.5"/>
+
+  <!-- Crown base -->
+  <rect x="16" y="18" width="16" height="3" fill="url(#iconCrown)"/>
+
+  <!-- Letter M -->
+  <text x="32" y="45" text-anchor="middle" font-family="Arial, sans-serif" font-size="20" font-weight="bold" fill="white">M</text>
+</svg>

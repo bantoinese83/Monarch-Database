@@ -1,0 +1,52 @@
+{
+  "entryPoints": ["src/index.ts"],
+  "out": "docs/api",
+  "name": "Monarch Database API",
+  "includeVersion": true,
+  "excludePrivate": true,
+  "excludeProtected": true,
+  "excludeInternal": true,
+  "hideGenerator": true,
+  "readme": "README.md",
+  "theme": "default",
+  "categorizeByGroup": true,
+  "categoryOrder": [
+    "Core",
+    "Collections",
+    "Querying",
+    "Indexing",
+    "Data Structures",
+    "Graph Operations",
+    "Vector Operations",
+    "Time Series",
+    "Geospatial",
+    "Enterprise Features",
+    "Configuration",
+    "Utilities"
+  ],
+  "groupOrder": [
+    "Core",
+    "Collections",
+    "Querying",
+    "Indexing",
+    "Data Structures",
+    "Graph Operations",
+    "Vector Operations",
+    "Time Series",
+    "Geospatial",
+    "Enterprise Features",
+    "Configuration",
+    "Utilities"
+  ],
+  "navigation": {
+    "includeCategories": true,
+    "includeGroups": true
+  },
+  "searchInComments": true,
+  "cleanOutputDir": true,
+  "emit": "docs",
+  "validation": {
+    "invalidLink": true,
+    "notExported": true
+  }
+}

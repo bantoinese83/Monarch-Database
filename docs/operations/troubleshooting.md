@@ -244,5 +244,5 @@ MONARCH_LOG_LEVEL=warn   # For warnings only
 1. Check logs: `kubectl logs -f deployment/monarch-db`
 2. Check metrics: `curl http://localhost:7331/metrics`
 3. Review documentation
-4. Contact support: support@monarch-db.dev
+4. Contact support: support@bantoinese83/Monarch-Database
 
