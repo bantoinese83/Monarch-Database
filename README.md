@@ -1,6 +1,6 @@
 # Monarch Database
 
-> **The Best Optimized In-Memory Database** - Enterprise-grade performance with AI/ML capabilities 🚀
+> **Drop-in replacement for Redis + MongoDB** - Zero-config, zero-dependencies, instant setup 🚀
 
 [![npm version](https://badge.fury.io/js/monarch-database.svg)](https://badge.fury.io/js/monarch-database)
 [![npm downloads](https://img.shields.io/npm/dm/monarch-database.svg)](https://www.npmjs.com/package/monarch-database)
@@ -8,11 +8,31 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Node.js](https://img.shields.io/badge/Node.js-43853D?logo=node.js&logoColor=white)](https://nodejs.org/)
 [![Performance](https://img.shields.io/badge/Performance-⭐⭐⭐⭐⭐-brightgreen)](https://github.com/bantoinese83/Monarch-Database/blob/main/docs/BENCHMARK_RESULTS.md)
-[![Build Status](https://img.shields.io/github/actions/workflow/status/bantoinese83/Monarch-Database/ci.yml)](https://github.com/bantoinese83/Monarch-Database/actions)
 [![Test Coverage](https://img.shields.io/badge/Coverage-100%25-brightgreen.svg)](https://github.com/bantoinese83/Monarch-Database/blob/main/docs/BENCHMARK_RESULTS.md)
 [![Code Quality](https://img.shields.io/badge/Code_Quality-A%2B-blue.svg)](https://github.com/bantoinese83/Monarch-Database)
 
-Monarch is a **high-performance, zero-dependency in-memory database** for JavaScript/TypeScript applications. It combines the speed of Redis with the query power of MongoDB, plus cutting-edge features like vector search for AI workloads.
+**Get started in 30 seconds:**
+
+```bash
+npm install monarch-database
+```
+
+```javascript
+import { Monarch } from 'monarch-database';
+
+const db = new Monarch();
+const users = db.addCollection('users');
+
+// Ready to use! 🚀
+```
+
+**Why Monarch?**
+- ⚡ **50x faster** than MongoDB for queries
+- 🔄 **Redis-compatible** data structures
+- 🧠 **Built-in AI/ML** support with vector search
+- 📦 **Zero dependencies** - works everywhere
+- 🔒 **Production-ready** with enterprise features
+- 🛠️ **Developer-friendly** - just works out of the box
 
 ## ✨ Key Features
 
@@ -40,80 +60,469 @@ Sorted Set Operations  | 0.15ms  | 0.2ms | N/A
 
 *Benchmarks run on M1 MacBook Pro, 16GB RAM*
 
-## 🚀 Quick Start
+## 🚀 5-Minute Quick Start
 
-### Installation
+### 1. Install (10 seconds)
 
 ```bash
 npm install monarch-database
-# or
-yarn add monarch-database
-# or
-pnpm add monarch-database
+# That's it! No setup required.
 ```
 
-### Basic Usage
+### 2. Your First Database (20 seconds)
+
+```javascript
+// Create a file: app.js
+import { Monarch } from 'monarch-database';
+
+// Create database (auto-creates if doesn't exist)
+const db = new Monarch();
+
+// Create collections (like tables)
+const users = db.addCollection('users');
+const posts = db.addCollection('posts');
+
+// Insert data
+await users.insert({
+  name: 'Alice',
+  email: 'alice@example.com',
+  age: 30
+});
+
+await posts.insert({
+  title: 'Hello World',
+  content: 'My first post!',
+  author: 'alice@example.com'
+});
+
+// Query data
+const user = await users.findOne({ email: 'alice@example.com' });
+const userPosts = await posts.find({ author: 'alice@example.com' });
+
+console.log('User:', user);
+console.log('Posts:', userPosts);
+```
+
+### 3. Run It
+
+```bash
+node app.js
+# Output: User: { _id: '...', name: 'Alice', ... }
+#         Posts: [{ _id: '...', title: 'Hello World', ... }]
+```
+
+**Or try our complete working example:**
+```bash
+node example.js  # See all features in action!
+```
+
+**🎉 You're done!** Monarch just works - no config, no servers, no setup.
+
+## 📋 Quick Reference
+
+### Most Common Operations
 
 ```javascript
 import { Monarch } from 'monarch-database';
 
-// Create database instance
 const db = new Monarch();
 
-// Create a collection
+// Documents (like MongoDB)
 const users = db.addCollection('users');
+await users.insert({ name: 'Alice', age: 30 });
+const user = await users.findOne({ name: 'Alice' });
+await users.update({ name: 'Alice' }, { $set: { age: 31 } });
 
-// Insert documents
-await users.insert({ name: 'Alice', age: 30, email: 'alice@example.com' });
-await users.insert({ name: 'Bob', age: 25, email: 'bob@example.com' });
+// Key-Value (like Redis)
+await db.set('session:123', { userId: 123, expires: Date.now() });
+const session = await db.get('session:123');
 
-// Query documents
-const adults = await users.find({ age: { $gte: 25 } });
-console.log(adults);
-// [{ _id: '...', name: 'Alice', age: 30, email: 'alice@example.com' },
-//  { _id: '...', name: 'Bob', age: 25, email: 'bob@example.com' }]
+// Lists (like Redis)
+await db.lpush('queue', 'task1', 'task2');
+const task = await db.lpop('queue');
 
-// Update documents
-await users.update(
-  { name: 'Alice' },
-  { $set: { department: 'Engineering' } }
-);
+// Sets
+await db.sadd('tags', 'javascript', 'typescript');
+const hasTag = await db.sismember('tags', 'javascript');
+
+// Sorted Sets (leaderboards, etc.)
+await db.zadd('scores', { 'Alice': 1500, 'Bob': 1200 });
+const topPlayers = await db.zrange('scores', 0, 2);
 ```
 
-### Advanced Data Structures
+### CLI One-Liners
+
+```bash
+# Quick database operations
+npm run cli init ./db && npm run cli create users ./db
+echo '{"name":"Alice","age":30}' | npm run cli insert users /dev/stdin ./db
+npm run cli query users ./db
+npm run cli stats ./db --detailed
+```
+
+### Configuration Options
 
 ```javascript
-// Lists (Redis-compatible)
-await db.lpush('notifications', 'Welcome!', 'Check out our docs!');
-const latest = await db.lpop('notifications'); // 'Check out our docs!'
+const db = new Monarch({
+  // File persistence
+  adapter: new FileSystemAdapter('./data'),
 
-// Sets (Redis-compatible)
-await db.sadd('tags', 'javascript', 'typescript', 'database');
-const hasTag = await db.sismember('tags', 'javascript'); // true
+  // Collection limits
+  collections: {
+    maxDocuments: 10000,
+    ttl: 3600000 // 1 hour
+  },
 
-// Sorted Sets (Redis-compatible)
-await db.zadd('leaderboard', { 'Alice': 1500, 'Bob': 1200, 'Charlie': 1800 });
-const topPlayers = await db.zrange('leaderboard', 0, 2); // ['Charlie', 'Alice', 'Bob']
-
-// Vector Search (AI workloads)
-await db.vadd('embeddings', 'doc1', [0.1, 0.2, 0.3, 0.4, 0.5]);
-await db.vadd('embeddings', 'doc2', [0.2, 0.3, 0.4, 0.5, 0.6]);
-const similar = await db.vsearch('embeddings', [0.15, 0.25, 0.35, 0.45, 0.55], 5);
-// Returns most similar documents with similarity scores
+  // Performance tuning
+  performance: {
+    cacheSize: 1000,
+    maxConcurrentOps: 100
+  }
+});
 ```
 
-## 📚 Documentation
+## 🛠️ Framework Integrations
 
-- **[Getting Started Guide](https://github.com/bantoinese83/Monarch-Database/blob/main/docs/getting-started.md)** - Complete setup and basic usage
-- **[API Reference](https://github.com/bantoinese83/Monarch-Database/blob/main/docs/api/)** - Comprehensive TypeDoc API documentation
-- **[Data Structures Guide](https://github.com/bantoinese83/Monarch-Database/blob/main/docs/DATA_STRUCTURES.md)** - Lists, Sets, Hashes, Sorted Sets, Geospatial
-- **[Query Guide](https://github.com/bantoinese83/Monarch-Database/blob/main/docs/QUERY_GUIDE.md)** - Advanced querying and indexing
-- **[Vector Search](https://github.com/bantoinese83/Monarch-Database/blob/main/docs/VECTOR_SEARCH.md)** - AI and semantic search
-- **[Graph Database](https://github.com/bantoinese83/Monarch-Database/blob/main/docs/GRAPH_DATABASE.md)** - Relationships and traversals
-- **[Performance Tuning](https://github.com/bantoinese83/Monarch-Database/blob/main/docs/PERFORMANCE_OPTIMIZATIONS.md)** - Optimization and benchmarking
-- **[Security Guide](https://github.com/bantoinese83/Monarch-Database/blob/main/docs/SECURITY_GUIDE.md)** - Authentication and encryption
-- **[Clustering Guide](https://github.com/bantoinese83/Monarch-Database/blob/main/docs/CLUSTERING_GUIDE.md)** - Distributed deployment
-- **[Migration Guide](https://github.com/bantoinese83/Monarch-Database/blob/main/docs/MIGRATION_GUIDE.md)** - Migrating from other databases
+### Express.js API
+
+```javascript
+// server.js
+import express from 'express';
+import { Monarch } from 'monarch-database';
+
+const app = express();
+app.use(express.json());
+
+const db = new Monarch();
+const users = db.addCollection('users');
+
+// REST API endpoints
+app.get('/users', async (req, res) => {
+  const users = await db.getCollection('users').find();
+  res.json(users);
+});
+
+app.post('/users', async (req, res) => {
+  const user = await db.getCollection('users').insert(req.body);
+  res.json(user);
+});
+
+app.get('/users/:id', async (req, res) => {
+  const user = await db.getCollection('users').findOne({ _id: req.params.id });
+  res.json(user);
+});
+
+app.listen(3000, () => console.log('API running on port 3000'));
+```
+
+### Next.js API Routes
+
+```javascript
+// pages/api/users.js
+import { Monarch } from 'monarch-database';
+
+const db = new Monarch();
+const users = db.addCollection('users');
+
+export default async function handler(req, res) {
+  if (req.method === 'GET') {
+    const allUsers = await users.find();
+    res.status(200).json(allUsers);
+  } else if (req.method === 'POST') {
+    const user = await users.insert(req.body);
+    res.status(201).json(user);
+  }
+}
+```
+
+### Session Storage
+
+```javascript
+// session-store.js
+import { Monarch } from 'monarch-database';
+
+class MonarchSessionStore {
+  constructor() {
+    this.db = new Monarch();
+    this.sessions = this.db.addCollection('sessions');
+  }
+
+  async get(sessionId) {
+    const session = await this.sessions.findOne({ sessionId });
+    return session?.data;
+  }
+
+  async set(sessionId, data, expiresAt) {
+    await this.sessions.update(
+      { sessionId },
+      { data, expiresAt },
+      { upsert: true }
+    );
+  }
+
+  async destroy(sessionId) {
+    await this.sessions.delete({ sessionId });
+  }
+}
+
+export default MonarchSessionStore;
+```
+
+### Caching Layer
+
+```javascript
+// cache.js
+import { Monarch } from 'monarch-database';
+
+class MonarchCache {
+  constructor() {
+    this.db = new Monarch();
+  }
+
+  async get(key) {
+    const result = await this.db.get(key);
+    return result ? JSON.parse(result) : null;
+  }
+
+  async set(key, value, ttlSeconds = 3600) {
+    const expiresAt = Date.now() + (ttlSeconds * 1000);
+    await this.db.set(key, JSON.stringify(value), 'EX', ttlSeconds);
+  }
+
+  async invalidate(pattern) {
+    // Delete keys matching pattern
+    const keys = await this.db.keys(pattern);
+    if (keys.length > 0) {
+      await this.db.del(...keys);
+    }
+  }
+}
+
+export default MonarchCache;
+```
+
+## 💡 Real-World Examples
+
+### User Management System
+
+```javascript
+import { Monarch } from 'monarch-database';
+
+const db = new Monarch();
+const users = db.addCollection('users');
+const sessions = db.addCollection('sessions');
+
+// User registration
+async function registerUser(email, password, profile) {
+  // Check if user exists
+  const existing = await users.findOne({ email });
+  if (existing) throw new Error('User already exists');
+
+  // Create user
+  const user = await users.insert({
+    email,
+    password: await hashPassword(password), // Implement hashing
+    profile,
+    createdAt: new Date(),
+    status: 'active'
+  });
+
+  return user;
+}
+
+// User login
+async function loginUser(email, password) {
+  const user = await users.findOne({ email });
+  if (!user) throw new Error('User not found');
+
+  if (!(await verifyPassword(password, user.password))) {
+    throw new Error('Invalid password');
+  }
+
+  // Create session
+  const session = await sessions.insert({
+    userId: user._id,
+    token: generateToken(),
+    expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000) // 24 hours
+  });
+
+  return { user, session };
+}
+```
+
+### E-commerce Product Catalog
+
+```javascript
+import { Monarch } from 'monarch-database';
+
+const db = new Monarch();
+const products = db.addCollection('products');
+const orders = db.addCollection('orders');
+const inventory = db.addCollection('inventory');
+
+// Add product with search capabilities
+async function addProduct(productData) {
+  const product = await products.insert({
+    ...productData,
+    searchTerms: `${productData.name} ${productData.description} ${productData.tags.join(' ')}`.toLowerCase(),
+    createdAt: new Date()
+  });
+
+  // Update inventory
+  await inventory.insert({
+    productId: product._id,
+    quantity: productData.initialStock || 0,
+    reserved: 0
+  });
+
+  return product;
+}
+
+// Search products
+async function searchProducts(query, filters = {}) {
+  const searchQuery = {
+    searchTerms: { $regex: query.toLowerCase() },
+    ...filters
+  };
+
+  return await products.find(searchQuery)
+    .sort({ createdAt: -1 })
+    .limit(20);
+}
+
+// Place order with inventory check
+async function placeOrder(userId, items) {
+  // Check inventory
+  for (const item of items) {
+    const stock = await inventory.findOne({ productId: item.productId });
+    if (!stock || stock.quantity - stock.reserved < item.quantity) {
+      throw new Error(`Insufficient inventory for product ${item.productId}`);
+    }
+  }
+
+  // Reserve inventory
+  for (const item of items) {
+    await inventory.update(
+      { productId: item.productId },
+      { $inc: { reserved: item.quantity } }
+    );
+  }
+
+  // Create order
+  const order = await orders.insert({
+    userId,
+    items,
+    status: 'pending',
+    createdAt: new Date(),
+    total: calculateTotal(items)
+  });
+
+  return order;
+}
+```
+
+### Chat Application with Real-time Features
+
+```javascript
+import { Monarch } from 'monarch-database';
+
+const db = new Monarch();
+const messages = db.addCollection('messages');
+const channels = db.addCollection('channels');
+const users = db.addCollection('users');
+
+// Send message
+async function sendMessage(channelId, userId, content) {
+  const message = await messages.insert({
+    channelId,
+    userId,
+    content,
+    timestamp: new Date(),
+    type: 'text'
+  });
+
+  // Update channel last activity
+  await channels.update(
+    { _id: channelId },
+    { lastMessageAt: new Date(), lastMessage: content }
+  );
+
+  return message;
+}
+
+// Get channel messages with pagination
+async function getChannelMessages(channelId, before = null, limit = 50) {
+  const query = { channelId };
+  if (before) {
+    query.timestamp = { $lt: before };
+  }
+
+  return await messages.find(query)
+    .sort({ timestamp: -1 })
+    .limit(limit);
+}
+
+// Real-time message subscription (polling approach)
+async function pollMessages(channelId, since) {
+  return await messages.find({
+    channelId,
+    timestamp: { $gt: since }
+  }).sort({ timestamp: 1 });
+}
+```
+
+## 🔧 API Reference
+
+### Collections API
+
+```javascript
+const users = db.addCollection('users');
+
+// CRUD Operations
+await users.insert(document);           // Insert one document
+await users.insert([doc1, doc2]);       // Insert multiple documents
+await users.find(query);                // Find documents
+await users.findOne(query);             // Find one document
+await users.update(query, update);      // Update documents
+await users.delete(query);              // Delete documents
+await users.count(query);               // Count documents
+
+// Query Examples
+await users.find({ age: { $gte: 18 } });                    // Age >= 18
+await users.find({ name: { $regex: '^John' } });            // Name starts with John
+await users.find({ tags: { $in: ['admin', 'moderator'] } }); // Has admin or moderator tag
+await users.find({}).sort({ createdAt: -1 }).limit(10);     // Latest 10 users
+```
+
+### Redis-Compatible Data Structures
+
+```javascript
+// Strings
+await db.set('key', 'value');           // Set string value
+await db.get('key');                    // Get string value
+await db.del('key');                    // Delete key
+
+// Lists (like arrays)
+await db.lpush('mylist', 'item1', 'item2');  // Push to left
+await db.rpush('mylist', 'item3');           // Push to right
+await db.lpop('mylist');                     // Pop from left
+await db.lrange('mylist', 0, -1);            // Get all items
+
+// Sets (unique values)
+await db.sadd('myset', 'member1', 'member2'); // Add members
+await db.sismember('myset', 'member1');       // Check membership
+await db.smembers('myset');                   // Get all members
+
+// Sorted Sets (scored members)
+await db.zadd('leaderboard', { 'Alice': 1500, 'Bob': 1200 });
+await db.zrange('leaderboard', 0, 2);         // Top 3 players
+await db.zscore('leaderboard', 'Alice');      // Get score
+
+// Hashes (key-value objects)
+await db.hset('user:123', 'name', 'Alice');   // Set hash field
+await db.hget('user:123', 'name');            // Get hash field
+await db.hgetall('user:123');                 // Get all fields
+```
 
 ## 🛠️ SDKs & Tools
 
@@ -372,6 +781,98 @@ npm run cli stats ./my-app-db --detailed
 - **📊 Analytics**: Detailed database statistics and collection metrics
 - **🛡️ Error Handling**: Clear, actionable error messages
 - **🎯 Production Ready**: Enterprise-grade CLI for database operations
+
+## 🚨 Troubleshooting
+
+### Common Issues
+
+**"Cannot find module 'monarch-database'"**
+```bash
+# Make sure you're using ES modules
+# In package.json, add:
+"type": "module"
+
+// Or use .mjs extension for your files
+mv app.js app.mjs
+```
+
+**Memory usage is too high**
+```javascript
+// Use collections with limits
+const users = db.addCollection('users', {
+  maxDocuments: 10000,
+  ttl: 3600000 // 1 hour
+});
+
+// Or use the memory optimizer
+import { MemoryOptimizer } from 'monarch-database';
+const optimizer = new MemoryOptimizer();
+optimizer.optimize(db);
+```
+
+**Queries are slow**
+```javascript
+// Add indexes to frequently queried fields
+await users.createIndex('email');
+await users.createIndex(['age', 'city']);
+
+// Use query optimization
+const results = await users.find(query)
+  .explain(); // Shows query execution plan
+```
+
+**Data persistence issues**
+```javascript
+// Use file system persistence
+import { FileSystemAdapter } from 'monarch-database';
+
+const db = new Monarch({
+  adapter: new FileSystemAdapter('./data')
+});
+
+// Or use the CLI to manage persistence
+npm run cli init ./my-data
+npm run cli create users ./my-data
+```
+
+## 🔄 Migration Guides
+
+### From Redis
+
+```javascript
+// Redis code
+await redis.set('user:123', JSON.stringify(user));
+const user = JSON.parse(await redis.get('user:123'));
+
+// Monarch equivalent
+await db.set('user:123', user);  // Automatic JSON handling
+const user = await db.get('user:123');
+```
+
+### From MongoDB
+
+```javascript
+// MongoDB code
+await collection.insertOne(doc);
+const docs = await collection.find({ age: { $gte: 18 } }).toArray();
+
+// Monarch equivalent
+await collection.insert(doc);  // Same API
+const docs = await collection.find({ age: { $gte: 18 } });
+```
+
+### From LocalStorage
+
+```javascript
+// Browser storage
+localStorage.setItem('user', JSON.stringify(user));
+const user = JSON.parse(localStorage.getItem('user'));
+
+// Monarch equivalent
+const db = new Monarch(); // Works in browser too!
+await db.set('user', user);
+const user = await db.get('user');
+```
 
 ## 🤝 Contributing
 
