@@ -279,9 +279,11 @@ registry.register({
   description: 'Show help information',
   execute: async () => {
     // eslint-disable-next-line no-console
-    console.log('Monarch Database CLI\n');
+    console.log('🚀 Monarch Database CLI v1.0.0');
     // eslint-disable-next-line no-console
-    console.log('Available commands:\n');
+    console.log('High-performance, zero-dependency database for JavaScript/TypeScript\n');
+    // eslint-disable-next-line no-console
+    console.log('📋 Available commands:\n');
 
     for (const command of registry.list()) {
       // eslint-disable-next-line no-console
@@ -289,13 +291,25 @@ registry.register({
     }
 
     // eslint-disable-next-line no-console
-    console.log('\nUsage: monarch <command> [args] [options]');
+    console.log('\n💡 Usage: monarch <command> [args] [options]');
     // eslint-disable-next-line no-console
-    console.log('Options:');
+    console.log('\n🔧 Global Options:');
     // eslint-disable-next-line no-console
     console.log('  --path <path>    Database path (default: ./monarch-data)');
     // eslint-disable-next-line no-console
-    console.log('  --help           Show help');
+    console.log('  --help           Show this help message');
+    // eslint-disable-next-line no-console
+    console.log('\n📖 Get help for a specific command: monarch help <command>');
+    // eslint-disable-next-line no-console
+    console.log('\n🌟 Examples:');
+    // eslint-disable-next-line no-console
+    console.log('  monarch init                    # Initialize database');
+    // eslint-disable-next-line no-console
+    console.log('  monarch create users            # Create users collection');
+    // eslint-disable-next-line no-console
+    console.log('  monarch insert users \'{"name": "John"}\'  # Insert document');
+    // eslint-disable-next-line no-console
+    console.log('  monarch query users             # Query all documents');
   },
 });
 
@@ -945,19 +959,54 @@ async function main() {
 
   if (!command) {
     // eslint-disable-next-line no-console
-    console.error(`❌ Unknown command: ${commandName}`);
+    console.error(`❌ Unknown command: "${commandName}"`);
     // eslint-disable-next-line no-console
-    console.error('Run "monarch help" to see available commands');
+    console.error('\n💡 Did you mean one of these commands?');
+    const availableCommands = registry.list().map(cmd => cmd.name);
+    const suggestions = availableCommands.filter(cmd =>
+      cmd.includes(commandName) || commandName.includes(cmd)
+    ).slice(0, 3); // Limit to top 3 suggestions
+    if (suggestions.length > 0) {
+      suggestions.forEach(suggestion => {
+        // eslint-disable-next-line no-console
+        console.error(`   • monarch ${suggestion}`);
+      });
+    } else {
+      // Fallback to showing first few commands
+      const firstCommands = availableCommands.slice(0, 3);
+      // eslint-disable-next-line no-console
+      console.error('   Try one of these popular commands:');
+      firstCommands.forEach(cmd => {
+        // eslint-disable-next-line no-console
+        console.error(`   • monarch ${cmd}`);
+      });
+    }
+    // eslint-disable-next-line no-console
+    console.error('\n📖 Run "monarch help" to see all available commands');
     process.exit(1);
   }
 
   try {
     await command.execute(positional.slice(1), options);
   } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
     // eslint-disable-next-line no-console
-    console.error('❌ Error:', error instanceof Error ? error.message : String(error));
+    console.error('❌ Error:', errorMessage);
+
+    // Provide helpful suggestions based on error type
+    if (errorMessage.includes('Collection') && errorMessage.includes('does not exist')) {
+      // eslint-disable-next-line no-console
+      console.error('\n💡 Try creating the collection first: monarch create <collection-name>');
+    } else if (errorMessage.includes('JSON')) {
+      // eslint-disable-next-line no-console
+      console.error('\n💡 Check your JSON syntax - use single quotes around the JSON string');
+    } else if (errorMessage.includes('not found')) {
+      // eslint-disable-next-line no-console
+      console.error('\n💡 Make sure the database is initialized: monarch init');
+    }
+
     // eslint-disable-next-line no-console
-    console.error('Run "monarch help" for usage information');
+    console.error('\n📖 For help, run: monarch help');
     process.exit(1);
   }
 }

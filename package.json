@@ -1,10 +1,11 @@
 {
   "name": "monarch-db",
   "version": "1.0.0",
-  "description": "A high-performance, zero-dependency, in-memory database library for JavaScript",
+  "description": "🚀 High-performance, zero-dependency in-memory database for JavaScript/TypeScript - Drop-in replacement for Redis + MongoDB",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
+  "sideEffects": false,
   "exports": {
     ".": {
       "import": "./dist/index.js",
@@ -13,11 +14,16 @@
     }
   },
   "files": [
-    "dist"
+    "dist",
+    "README.md",
+    "LICENSE"
   ],
   "scripts": {
     "build": "vite build",
+    "dev": "tsx --watch src/benchmark.ts",
     "test": "vitest",
+    "test:unit": "vitest run test/unit/",
+    "test:integration": "vitest run test/integration/",
     "test:coverage": "vitest run --coverage",
     "test:watch": "vitest --watch",
     "benchmark": "tsx src/benchmark.ts",
@@ -28,13 +34,16 @@
     "type-check": "tsc --noEmit",
     "clean": "rm -rf dist coverage *.tsbuildinfo",
     "docs": "typedoc --out docs/api src/index.ts",
-    "prepublishOnly": "npm run build && npm run test:coverage",
+    "docs:serve": "typedoc --out docs/api --serve src/index.ts",
+    "prepublishOnly": "npm run clean && npm run build && npm run test:coverage",
+    "prepare": "husky install",
     "start": "node dist/server.js",
     "server": "npm run build && npm run start",
     "test:performance": "node tests/performance/load-test.ts",
     "analyze:bundle": "vite-bundle-visualizer",
     "size:check": "bundlesize",
-    "cli": "tsx src/cli/index.ts"
+    "cli": "tsx src/cli/index.ts",
+    "cli:build": "npm run build && npm run cli"
   },
   "bin": {
     "monarch": "./dist/cli/index.js"
@@ -47,9 +56,32 @@
     "nodejs",
     "browser",
     "fast",
-    "zero-dependency"
+    "zero-dependency",
+    "redis",
+    "mongodb",
+    "nosql",
+    "embedded",
+    "key-value",
+    "document-db",
+    "vector-search",
+    "ai",
+    "ml",
+    "clustering",
+    "high-performance",
+    "real-time",
+    "json",
+    "data-structures",
+    "persistence",
+    "enterprise"
   ],
-  "author": "Monarch Team",
+  "author": "Monarch Database Team <hello@monarchdb.dev>",
+  "contributors": [
+    "Bantoinese83 (https://github.com/bantoinese83)"
+  ],
+  "funding": {
+    "type": "github",
+    "url": "https://github.com/sponsors/bantoinese83"
+  },
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -77,6 +109,14 @@
   },
   "engines": {
     "node": ">=18.0.0"
+  },
+  "prettier": {
+    "semi": true,
+    "trailingComma": "es5",
+    "singleQuote": true,
+    "printWidth": 100,
+    "tabWidth": 2,
+    "useTabs": false
   },
   "lint-staged": {
     "*.ts": [

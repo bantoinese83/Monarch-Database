@@ -13,10 +13,34 @@ import { errorUtils } from './errors';
 import { logger } from './logger';
 
 export class DataOperationsManager {
+  private operationStats = new Map<string, { count: number; totalTime: number; avgTime: number }>();
+
   constructor(
     private collectionManager: CollectionManager,
     private dataStructures: OptimizedDataStructures
   ) {}
+
+  /**
+   * Get performance statistics for operations
+   */
+  getPerformanceStats(): Record<string, { count: number; totalTime: number; avgTime: number }> {
+    const stats: Record<string, { count: number; totalTime: number; avgTime: number }> = {};
+    for (const [op, stat] of this.operationStats) {
+      stats[op] = { ...stat };
+    }
+    return stats;
+  }
+
+  /**
+   * Record operation timing for performance monitoring
+   */
+  private recordOperationTime(operation: string, duration: number): void {
+    const existing = this.operationStats.get(operation) || { count: 0, totalTime: 0, avgTime: 0 };
+    existing.count++;
+    existing.totalTime += duration;
+    existing.avgTime = existing.totalTime / existing.count;
+    this.operationStats.set(operation, existing);
+  }
 
   // ===== COLLECTION OPERATIONS =====
 
@@ -24,16 +48,32 @@ export class DataOperationsManager {
    * Insert a document into a collection
    */
   async insert(collectionName: string, document: any): Promise<any[]> {
-    const collection = this.getCollection(collectionName);
-    return collection.insert(document); // insert returns the inserted documents
+    const startTime = Date.now();
+    try {
+      const collection = this.getCollection(collectionName);
+      const result = await collection.insert(document); // insert returns the inserted documents
+      this.recordOperationTime('insert', Date.now() - startTime);
+      return result;
+    } catch (error) {
+      this.recordOperationTime('insert', Date.now() - startTime);
+      throw error;
+    }
   }
 
   /**
    * Find documents in a collection
    */
   async find(collectionName: string, query?: Query, options?: { limit?: number; skip?: number }): Promise<any[]> {
-    const collection = this.getCollection(collectionName);
-    return collection.findAsync(query, options);
+    const startTime = Date.now();
+    try {
+      const collection = this.getCollection(collectionName);
+      const result = await collection.findAsync(query, options);
+      this.recordOperationTime('find', Date.now() - startTime);
+      return result;
+    } catch (error) {
+      this.recordOperationTime('find', Date.now() - startTime);
+      throw error;
+    }
   }
 
   /**

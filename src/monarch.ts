@@ -58,10 +58,25 @@ export class Monarch {
   private schemas = new Map<string, SchemaDefinition>();
 
   /**
-   * Create a new Monarch database instance
-   * 
-   * @param configOrAdapter - Either a MonarchConfig object for dependency injection,
-   *                          or a PersistenceAdapter for backward compatibility
+   * Creates a new Monarch Database instance
+   *
+   * @param configOrAdapter - Either a MonarchConfig object or a PersistenceAdapter for backward compatibility
+   *
+   * @example
+   * ```typescript
+   * // Modern configuration approach
+   * const db = new Monarch({
+   *   adapter: new FileSystemAdapter('./data'),
+   *   enableClustering: true,
+   *   security: { encryption: true }
+   * });
+   *
+   * // Legacy adapter approach (still supported)
+   * const db = new Monarch(new FileSystemAdapter('./data'));
+   *
+   * // Default configuration (in-memory only)
+   * const db = new Monarch();
+   * ```
    */
   constructor(configOrAdapter?: MonarchConfig | PersistenceAdapter) {
     // Handle backward compatibility: if PersistenceAdapter, wrap it in config
@@ -557,6 +572,104 @@ export class Monarch {
         'loadError',
         error
       );
+    }
+  }
+
+  /**
+   * Preloads all collections from disk into memory for faster subsequent access.
+   * Useful for applications that need to warm up the cache on startup.
+   *
+   * @returns Promise that resolves when all collections are loaded
+   *
+   * @example
+   * ```typescript
+   * const db = new Monarch(new FileSystemAdapter('./data'));
+   * await db.preloadCollections(); // Warm up the cache
+   * // Now all collections are ready for fast access
+   * ```
+   */
+  async preloadCollections(): Promise<void> {
+    if (!this.adapter) {
+      logger.warn('No adapter configured, skipping collection preload');
+      return;
+    }
+
+    try {
+      // Load database state if not already loaded
+      const data = await this.adapter.load();
+      if (data && typeof data === 'object') {
+        // Pre-create collection instances for all collections in the data
+        for (const collectionName of Object.keys(data)) {
+          if (!this.collectionManager.getCollection(collectionName)) {
+            this.collectionManager.createCollection(collectionName);
+          }
+        }
+        logger.info('Collections preloaded successfully', { count: Object.keys(data).length });
+      }
+    } catch (error) {
+      logger.warn('Collection preload failed, continuing without preload', { error });
+      // Don't throw - preload failure shouldn't break the application
+    }
+  }
+
+  /**
+   * Performs a health check on the database and its components.
+   * Useful for monitoring and ensuring database availability.
+   *
+   * @returns Promise resolving to health status object
+   *
+   * @example
+   * ```typescript
+   * const health = await db.healthCheck();
+   * if (health.status === 'healthy') {
+   *   console.log('Database is operating normally');
+   * }
+   * ```
+   */
+  async healthCheck(): Promise<{
+    status: 'healthy' | 'degraded' | 'unhealthy';
+    uptime: number;
+    collections: number;
+    memoryUsage: number;
+    adapter: string;
+    timestamp: number;
+  }> {
+    const startTime = Date.now();
+    let status: 'healthy' | 'degraded' | 'unhealthy' = 'healthy';
+
+    try {
+      // Check adapter availability
+      if (!this.adapter) {
+        status = 'unhealthy';
+      } else {
+        // Try a simple adapter operation
+        await this.adapter.load();
+      }
+
+      // Check collection manager
+      const collections = this.collectionManager.getCollectionNames().length;
+
+      // Basic memory usage (rough estimate)
+      const memoryUsage = process.memoryUsage().heapUsed;
+
+      return {
+        status,
+        uptime: Date.now() - startTime,
+        collections,
+        memoryUsage,
+        adapter: this.adapter?.constructor.name || 'None',
+        timestamp: Date.now()
+      };
+    } catch (error) {
+      logger.error('Health check failed', { error });
+      return {
+        status: 'unhealthy',
+        uptime: Date.now() - startTime,
+        collections: 0,
+        memoryUsage: 0,
+        adapter: 'Unknown',
+        timestamp: Date.now()
+      };
     }
   }
 

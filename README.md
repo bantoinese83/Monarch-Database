@@ -2,26 +2,57 @@
 
 > **Drop-in replacement for Redis + MongoDB** - Zero-config, zero-dependencies, instant setup 🚀
 
-[![npm version](https://badge.fury.io/js/monarch-database.svg)](https://badge.fury.io/js/monarch-database)
-[![npm downloads](https://img.shields.io/npm/dm/monarch-database.svg)](https://www.npmjs.com/package/monarch-database)
+[![npm version](https://badge.fury.io/js/monarch-db.svg)](https://badge.fury.io/js/monarch-db)
+[![npm downloads](https://img.shields.io/npm/dm/monarch-db.svg)](https://www.npmjs.com/package/monarch-db)
+[![Build Status](https://img.shields.io/github/actions/workflow/status/bantoinese83/Monarch-Database/ci.yml)](https://github.com/bantoinese83/Monarch-Database/actions)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Node.js](https://img.shields.io/badge/Node.js-43853D?logo=node.js&logoColor=white)](https://nodejs.org/)
 [![Performance](https://img.shields.io/badge/Performance-⭐⭐⭐⭐⭐-brightgreen)](https://github.com/bantoinese83/Monarch-Database/blob/main/docs/BENCHMARK_RESULTS.md)
-[![Test Coverage](https://img.shields.io/badge/Coverage-100%25-brightgreen.svg)](https://github.com/bantoinese83/Monarch-Database/blob/main/docs/BENCHMARK_RESULTS.md)
+[![Test Coverage](https://img.shields.io/badge/Coverage-85%25-brightgreen.svg)](https://github.com/bantoinese83/Monarch-Database/blob/main/docs/BENCHMARK_RESULTS.md)
 [![Code Quality](https://img.shields.io/badge/Code_Quality-A%2B-blue.svg)](https://github.com/bantoinese83/Monarch-Database)
+[![Last Commit](https://img.shields.io/github/last-commit/bantoinese83/Monarch-Database)](https://github.com/bantoinese83/Monarch-Database/commits/main)
+[![GitHub stars](https://img.shields.io/github/stars/bantoinese83/Monarch-Database?style=social)](https://github.com/bantoinese83/Monarch-Database/stargazers)
 
-**Get started in 30 seconds:**
+## 📋 Table of Contents
+
+- [🚀 Quick Start](#-quick-start)
+- [✨ Key Features](#-key-features)
+- [📊 Performance Benchmarks](#-performance-benchmarks)
+- [📦 Installation](#-installation)
+- [🛠️ Usage](#️-usage)
+- [🧠 AI/ML Integration](#-aiml-integration)
+- [🏗️ Clustering](#️-clustering)
+- [🔍 Vector Search](#-vector-search)
+- [📚 API Reference](#-api-reference)
+- [🛠️ CLI Tool](#️-cli-tool)
+- [🤝 Contributing](#-contributing)
+- [📄 License](#-license)
+
+## 🚀 Quick Start
 
 ```bash
-npm install monarch-database
+npm install monarch-db
 ```
 
 ```javascript
-import { Monarch } from 'monarch-database';
+import { Monarch } from 'monarch-db';
 
 const db = new Monarch();
 const users = db.addCollection('users');
+
+// Insert some data
+await users.insert({ name: 'Alice', age: 30, email: 'alice@example.com' });
+await users.insert({ name: 'Bob', age: 25, email: 'bob@example.com' });
+
+// Query with MongoDB-style syntax
+const adults = await users.find({ age: { $gte: 25 } });
+console.log('Adult users:', adults);
+
+// Real-time updates
+users.watch().on('insert', (change) => {
+  console.log('New user added:', change.doc);
+});
 
 // Ready to use! 🚀
 ```

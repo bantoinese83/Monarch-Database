@@ -15,6 +15,8 @@ import { logger } from './logger';
 
 export class CollectionManager {
   private collections: Map<string, Collection> = new Map();
+  private accessOrder: string[] = []; // Simple LRU tracking
+  private readonly MAX_CACHE_SIZE = 100; // Limit cache size to prevent memory leaks
 
   constructor(private adapter?: PersistenceAdapter) {}
 
@@ -50,10 +52,29 @@ export class CollectionManager {
   }
 
   /**
-   * Get an existing collection
+   * Get an existing collection with LRU caching
    */
   getCollection(name: string): Collection | null {
-    return this.collections.get(name) || null;
+    const collection = this.collections.get(name);
+    if (collection) {
+      // Update access order for LRU
+      const index = this.accessOrder.indexOf(name);
+      if (index > -1) {
+        this.accessOrder.splice(index, 1);
+      }
+      this.accessOrder.push(name);
+
+      // Evict least recently used if cache is full
+      if (this.accessOrder.length > this.MAX_CACHE_SIZE) {
+        const lruName = this.accessOrder.shift();
+        if (lruName) {
+          this.collections.delete(lruName);
+        }
+      }
+
+      return collection;
+    }
+    return null;
   }
 
   /**
