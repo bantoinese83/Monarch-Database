@@ -18,7 +18,7 @@
  * ✅ Performance: Advanced caching and optimization
  */
 
-import { Monarch } from 'monarch-db';
+import { Monarch } from 'monarch-database-quantum';
 
 class EnterpriseMonarchDemo {
   private db: Monarch;

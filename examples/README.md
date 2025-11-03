@@ -7,7 +7,7 @@ This directory contains comprehensive examples demonstrating various use cases a
 All examples use the published package. Make sure to install dependencies first:
 
 ```bash
-npm install monarch-db
+npm install monarch-database-quantum
 ```
 
 Then run any example:
@@ -199,7 +199,7 @@ Run `npm run benchmark` to see performance comparisons.
 
 **"Cannot find module 'monarch-db'"**
 ```bash
-npm install monarch-db
+npm install monarch-database-quantum
 ```
 
 **"Example fails with permission error"**

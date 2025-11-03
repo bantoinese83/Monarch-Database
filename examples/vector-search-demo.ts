@@ -5,7 +5,7 @@
  * for AI/ML workloads, similarity search, and recommendation systems.
  */
 
-import { Monarch } from 'monarch-db';
+import { Monarch } from 'monarch-database-quantum';
 
 // Sample product data with embeddings
 interface Product {

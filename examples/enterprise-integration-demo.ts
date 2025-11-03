@@ -5,7 +5,7 @@
  * popular enterprise frameworks and tools.
  */
 
-import { Monarch } from 'monarch-db';
+import { Monarch } from 'monarch-database-quantum';
 
 // Example 1: Express.js Integration
 function createExpressIntegration() {

@@ -6,7 +6,7 @@
  * and automated alerting using Monarch's advanced features.
  */
 
-import { Monarch } from 'monarch-db';
+import { Monarch } from 'monarch-database-quantum';
 
 interface Sensor {
   id: string;

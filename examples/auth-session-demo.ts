@@ -6,7 +6,7 @@
  * rate limiting, and security monitoring using Monarch's features.
  */
 
-import { Monarch } from 'monarch-db';
+import { Monarch } from 'monarch-database-quantum';
 
 interface User {
   id: string;

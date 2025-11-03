@@ -1,6 +1,6 @@
 #!/usr/bin/env tsx
 
-import { Monarch } from 'monarch-db';
+import { Monarch } from 'monarch-database-quantum';
 
 // Example usage of Monarch Database
 async function main() {

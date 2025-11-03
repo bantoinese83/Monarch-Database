@@ -35,11 +35,11 @@
 ## 🚀 Quick Start
 
 ```bash
-npm install monarch-db
+npm install monarch-database-quantum
 ```
 
 ```javascript
-import { Monarch } from 'monarch-db';
+import { Monarch } from 'monarch-database-quantum';
 
 const db = new Monarch();
 const users = db.addCollection('users');
@@ -747,7 +747,7 @@ Monarch Database is the world's first database to implement **quantum algorithms
 ### Example: Quantum Social Network Analysis
 
 ```javascript
-import { Monarch } from 'monarch-db';
+import { Monarch } from 'monarch-database-quantum';
 
 const db = new Monarch();
 
