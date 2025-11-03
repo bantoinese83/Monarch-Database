@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: monarch-config
+  labels:
+    app: monarch-db
+data:
+  MONARCH_PORT: "7331"
+  MONARCH_LOG_LEVEL: "info"
+  MONARCH_LOG_FORMAT: "json"
+  MONARCH_DATA_DIR: "/app/data"
+  MONARCH_MAX_CONCURRENT_OPERATIONS: "50"
+  MONARCH_OPERATION_TIMEOUT: "30000"
+

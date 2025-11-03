@@ -1,0 +1,152 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: monarch-db
+  labels:
+    app: monarch-db
+    version: v1
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: monarch-db
+  template:
+    metadata:
+      labels:
+        app: monarch-db
+        version: v1
+    spec:
+      containers:
+      - name: monarch-db
+        image: monarch-db:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - name: http
+          containerPort: 7331
+          protocol: TCP
+        - name: metrics
+          containerPort: 9090
+          protocol: TCP
+        env:
+        - name: NODE_ENV
+          value: "production"
+        - name: MONARCH_PORT
+          value: "7331"
+        - name: MONARCH_LOG_LEVEL
+          value: "info"
+        - name: MONARCH_LOG_FORMAT
+          value: "json"
+        - name: MONARCH_DATA_DIR
+          value: "/app/data"
+        volumeMounts:
+        - name: data
+          mountPath: /app/data
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /live
+            port: 7331
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 3
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 7331
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 2
+          failureThreshold: 3
+        startupProbe:
+          httpGet:
+            path: /health
+            port: 7331
+          initialDelaySeconds: 0
+          periodSeconds: 5
+          timeoutSeconds: 2
+          failureThreshold: 30
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: monarch-data-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: monarch-db-service
+  labels:
+    app: monarch-db
+spec:
+  type: ClusterIP
+  ports:
+  - name: http
+    port: 7331
+    targetPort: 7331
+    protocol: TCP
+  - name: metrics
+    port: 9090
+    targetPort: 7331
+    protocol: TCP
+  selector:
+    app: monarch-db
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: monarch-data-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: monarch-db-hpa
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: monarch-db
+  minReplicas: 3
+  maxReplicas: 10
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 80
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 300
+      policies:
+      - type: Percent
+        value: 50
+        periodSeconds: 60
+    scaleUp:
+      stabilizationWindowSeconds: 0
+      policies:
+      - type: Percent
+        value: 100
+        periodSeconds: 15
+      - type: Pods
+        value: 2
+        periodSeconds: 15
+      selectPolicy: Max
+

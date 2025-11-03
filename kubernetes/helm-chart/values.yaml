@@ -1,0 +1,50 @@
+# Default values for monarch-db
+replicaCount: 3
+
+image:
+  repository: monarch-db
+  pullPolicy: IfNotPresent
+  tag: "latest"
+
+service:
+  type: ClusterIP
+  port: 8080
+
+persistence:
+  enabled: true
+  storageClass: ""
+  accessMode: ReadWriteOnce
+  size: 10Gi
+
+resources:
+  requests:
+    cpu: 500m
+    memory: 1Gi
+  limits:
+    cpu: 2000m
+    memory: 4Gi
+
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 70
+  targetMemoryUtilizationPercentage: 80
+
+durability:
+  level: high
+  snapshotInterval: 300000
+
+monitoring:
+  enabled: true
+  serviceMonitor:
+    enabled: true
+
+security:
+  encryptionKey: ""
+  encryptionKeySecret: ""
+
+config:
+  maxCollections: 100
+  maxDocumentsPerCollection: 100000
+

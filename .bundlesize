@@ -1,0 +1,13 @@
+[
+  {
+    "path": "./dist/index.js",
+    "maxSize": "250 KB",
+    "compression": "gzip"
+  },
+  {
+    "path": "./dist/index.cjs",
+    "maxSize": "250 KB",
+    "compression": "gzip"
+  }
+]
+

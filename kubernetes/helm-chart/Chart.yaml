@@ -1,0 +1,15 @@
+apiVersion: v2
+name: monarch-db
+description: A Helm chart for Monarch Database - Enterprise in-memory database
+type: application
+version: 1.0.0
+appVersion: "1.0.0"
+keywords:
+  - database
+  - in-memory
+  - nosql
+  - graph
+  - vector
+maintainers:
+  - name: Monarch Team
+

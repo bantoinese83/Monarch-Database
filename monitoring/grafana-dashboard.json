@@ -1,0 +1,144 @@
+{
+  "dashboard": {
+    "title": "Monarch Database",
+    "tags": ["monarch", "database", "monitoring"],
+    "timezone": "browser",
+    "schemaVersion": 27,
+    "version": 1,
+    "refresh": "10s",
+    "panels": [
+      {
+        "id": 1,
+        "title": "Service Health Status",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "monarch_health_status",
+            "refId": "A"
+          }
+        ],
+        "gridPos": { "h": 4, "w": 6, "x": 0, "y": 0 },
+        "fieldConfig": {
+          "defaults": {
+            "mappings": [
+              { "type": "value", "options": { "1": { "text": "Healthy", "color": "green" } } },
+              { "type": "value", "options": { "0": { "text": "Unhealthy", "color": "red" } } }
+            ],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "value": 0, "color": "red" },
+                { "value": 1, "color": "green" }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 2,
+        "title": "Uptime",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "monarch_uptime_seconds",
+            "refId": "A"
+          }
+        ],
+        "gridPos": { "h": 4, "w": 6, "x": 6, "y": 0 },
+        "format": "dtdurations"
+      },
+      {
+        "id": 3,
+        "title": "Memory Usage",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "monarch_memory_used_percent",
+            "refId": "A",
+            "legendFormat": "Memory Used %"
+          }
+        ],
+        "gridPos": { "h": 8, "w": 12, "x": 0, "y": 4 },
+        "yaxes": [
+          { "format": "percent", "max": 100, "min": 0 },
+          { "format": "short" }
+        ],
+        "alert": {
+          "conditions": [
+            {
+              "evaluator": { "params": [90], "type": "gt" },
+              "operator": { "type": "and" },
+              "query": { "params": ["A", "5m", "now"] },
+              "reducer": { "params": [], "type": "last" },
+              "type": "query"
+            }
+          ],
+          "executionErrorState": "alerting",
+          "for": "5m",
+          "frequency": "10s",
+          "handler": 1,
+          "name": "High Memory Usage",
+          "noDataState": "no_data",
+          "notifications": []
+        }
+      },
+      {
+        "id": 4,
+        "title": "Operation Count",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(monarch_operation_count_total[5m])",
+            "refId": "A",
+            "legendFormat": "{{operation}}"
+          }
+        ],
+        "gridPos": { "h": 8, "w": 12, "x": 12, "y": 4 },
+        "yaxes": [
+          { "format": "ops", "label": "Operations/sec" },
+          { "format": "short" }
+        ]
+      },
+      {
+        "id": 5,
+        "title": "Operation Latency",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "monarch_operation_duration_seconds",
+            "refId": "A",
+            "legendFormat": "{{operation}}"
+          }
+        ],
+        "gridPos": { "h": 8, "w": 12, "x": 0, "y": 12 },
+        "yaxes": [
+          { "format": "s", "label": "Duration" },
+          { "format": "short" }
+        ]
+      },
+      {
+        "id": 6,
+        "title": "Memory Bytes",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "monarch_memory_used_bytes",
+            "refId": "A",
+            "legendFormat": "Used"
+          },
+          {
+            "expr": "monarch_memory_total_bytes",
+            "refId": "B",
+            "legendFormat": "Total"
+          }
+        ],
+        "gridPos": { "h": 8, "w": 12, "x": 12, "y": 12 },
+        "yaxes": [
+          { "format": "bytes", "label": "Memory" },
+          { "format": "short" }
+        ]
+      }
+    ]
+  }
+}
+

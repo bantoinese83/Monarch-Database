@@ -1,0 +1,105 @@
+{
+  "name": "monarch-db",
+  "version": "1.0.0",
+  "description": "A high-performance, zero-dependency, in-memory database library for JavaScript",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "vite build",
+    "test": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "test:watch": "vitest --watch",
+    "benchmark": "tsx src/benchmark.ts",
+    "lint": "eslint src/**/*.ts",
+    "lint:fix": "eslint src/**/*.ts --fix",
+    "format": "prettier --write src/**/*.ts",
+    "format:check": "prettier --check src/**/*.ts",
+    "type-check": "tsc --noEmit",
+    "prepublishOnly": "npm run build && npm run test:coverage",
+    "start": "node dist/server.js",
+    "server": "npm run build && npm run start",
+    "test:performance": "node tests/performance/load-test.ts",
+    "analyze:bundle": "vite-bundle-visualizer",
+    "size:check": "bundlesize",
+    "cli": "tsx src/cli/index.ts"
+  },
+  "bin": {
+    "monarch": "./dist/cli/index.js"
+  },
+  "keywords": [
+    "database",
+    "in-memory",
+    "javascript",
+    "typescript",
+    "nodejs",
+    "browser",
+    "fast",
+    "zero-dependency"
+  ],
+  "author": "Monarch Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/monarch-db/monarch.git"
+  },
+  "bugs": {
+    "url": "https://github.com/monarch-db/monarch/issues"
+  },
+  "homepage": "https://monarch-db.dev",
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@typescript-eslint/eslint-plugin": "^8.46.2",
+    "@typescript-eslint/parser": "^8.46.2",
+    "@vitest/coverage-v8": "^1.0.0",
+    "eslint": "^8.0.0",
+    "prettier": "^3.0.0",
+    "tsx": "^4.20.6",
+    "typescript": "^5.0.0",
+    "vite": "^5.0.0",
+    "vite-plugin-dts": "^3.0.0",
+    "vitest": "^1.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "knip": {
+    "ignore": [
+      "examples/**/*.ts",
+      "benchmarks/**/*.js",
+      "src/server.ts"
+    ],
+    "ignoreDependencies": [
+      "ajv"
+    ],
+    "ignoreExportsUsedInFile": true,
+    "include": [
+      "src/index.ts"
+    ],
+    "workspaces": {
+      ".": {
+        "entry": [
+          "src/index.ts"
+        ],
+        "project": [
+          "src/**/*.ts",
+          "test/**/*.ts"
+        ]
+      }
+    }
+  },
+  "browserslist": [
+    "last 2 versions",
+    "not ie <= 11"
+  ]
+}

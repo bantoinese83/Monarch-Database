@@ -1,0 +1,34 @@
+version: '3.8'
+
+services:
+  monarch:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: monarch-db
+    ports:
+      - "7331:7331"
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+    environment:
+      - NODE_ENV=production
+      - MONARCH_LOG_LEVEL=info
+      - MONARCH_DATA_DIR=/app/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:7331/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+    networks:
+      - monarch-network
+    labels:
+      - "com.monarch.service=database"
+      - "com.monarch.version=1.0.0"
+
+networks:
+  monarch-network:
+    driver: bridge
+

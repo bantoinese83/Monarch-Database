@@ -1,0 +1,67 @@
+groups:
+  - name: monarch_alerts
+    interval: 30s
+    rules:
+      - alert: MonarchServiceDown
+        expr: up{job="monarch-db"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Monarch Database service is down"
+          description: "Monarch Database service has been down for more than 1 minute."
+
+      - alert: MonarchHighMemoryUsage
+        expr: monarch_memory_used_percent > 90
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High memory usage detected"
+          description: "Monarch Database memory usage is above 90% for 5 minutes."
+
+      - alert: MonarchCriticalMemoryUsage
+        expr: monarch_memory_used_percent > 95
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Critical memory usage"
+          description: "Monarch Database memory usage is above 95% - service may become unstable."
+
+      - alert: MonarchHighOperationLatency
+        expr: monarch_operation_duration_seconds > 1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High operation latency"
+          description: "Operation {{ $labels.operation }} is taking longer than 1 second."
+
+      - alert: MonarchReadinessCheckFailed
+        expr: monarch_readiness_status == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Readiness check failed"
+          description: "Monarch Database readiness check has failed for more than 2 minutes."
+
+      - alert: MonarchHighErrorRate
+        expr: rate(monarch_error_count_total[5m]) > 10
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High error rate detected"
+          description: "Monarch Database is experiencing more than 10 errors per second."
+
+      - alert: MonarchLowOperationThroughput
+        expr: rate(monarch_operation_count_total[5m]) < 10
+        for: 10m
+        labels:
+          severity: info
+        annotations:
+          summary: "Low operation throughput"
+          description: "Operation throughput is below expected levels."
+

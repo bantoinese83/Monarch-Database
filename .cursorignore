@@ -1,0 +1,25 @@
+# Build outputs
+dist/
+build/
+coverage/
+
+# Dependencies
+node_modules/
+
+# Data and logs
+data/
+logs/
+*.log
+
+# Temporary files
+temp/
+tmp/
+test/temp-*
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+
