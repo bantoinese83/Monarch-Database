@@ -434,6 +434,8 @@ registry.register({
     'query products ./my-db \'{"category": "electronics"}\' --sort price --limit 10'
   ],
   execute: async (args, options) => {
+    const dbPath = (typeof options.path === 'string' ? options.path : undefined) || args[2] || './monarch-data';
+
     try {
       // Ensure directory exists
       if (!existsSync(dbPath)) {
@@ -461,7 +463,6 @@ registry.register({
       }
 
       const collectionName = args[0];
-      const dbPath = (typeof options.path === 'string' ? options.path : undefined) || args[2] || './monarch-data';
       const queryStr = (typeof options.path === 'string' ? options.path : undefined) ? args[1] : (args[1] && !args[1].startsWith('./') ? args[1] : undefined);
 
       if (!collectionName) {
@@ -487,9 +488,10 @@ registry.register({
 
       // Apply sorting if specified
       if (typeof options.sort === 'string') {
+        const sortField = options.sort;
         results.sort((a, b) => {
-          const aVal = a[options.sort];
-          const bVal = b[options.sort];
+          const aVal = a[sortField];
+          const bVal = b[sortField];
           if (aVal < bVal) return -1;
           if (aVal > bVal) return 1;
           return 0;
