@@ -1142,10 +1142,7 @@ export class Monarch {
 
     for (const collection of this.collectionManager.getAllCollections()) {
       const name = collection.getName();
-      data.collections[name] = {
-        documents: collection.getAllDocuments(),
-        indices: collection.getIndices()
-      };
+      data.collections[name] = collection.serialize();
     }
 
     return data;
@@ -1217,37 +1214,8 @@ export class Monarch {
 
     const collection = this.addCollection(name);
 
-    // Load documents if present
-    if (collectionData.documents) {
-      if (!Array.isArray(collectionData.documents)) {
-        throw new ValidationError(
-          ERROR_MESSAGES.DOCUMENTS_FORMAT_INVALID(name),
-          'documents',
-          collectionData.documents
-        );
-      }
-      if (collectionData.documents.length > LIMITS.MAX_DOCUMENTS_PER_COLLECTION) {
-        throw new ResourceLimitError(
-          ERROR_MESSAGES.DOCUMENTS_TOO_MANY(name, LIMITS.MAX_DOCUMENTS_PER_COLLECTION),
-          'documents',
-          LIMITS.MAX_DOCUMENTS_PER_COLLECTION,
-          collectionData.documents.length
-        );
-      }
-      collection.setAllDocuments(collectionData.documents);
-    }
-
-    // Restore indices if present
-    if (collectionData.indices) {
-      if (!Array.isArray(collectionData.indices)) {
-        throw new ValidationError(
-          ERROR_MESSAGES.INDICES_FORMAT_INVALID(name),
-          'indices',
-          collectionData.indices
-        );
-      }
-      this.restoreCollectionIndices(collection, collectionData.indices);
-    }
+    // Use collection's deserialize method to restore full state
+    collection.deserialize(collectionData);
   }
 
   /**

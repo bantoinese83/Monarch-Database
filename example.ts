@@ -1,7 +1,7 @@
 // Monarch Database - Quick Start Example
-// Run with: node example.js
+// Run with: npx tsx example.ts
 
-import { Monarch } from './src/monarch.js';
+import { Monarch } from './src/monarch';
 
 async function main() {
   console.log('🚀 Starting Monarch Database example...\n');

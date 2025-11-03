@@ -86,10 +86,7 @@ registry.register({
         mkdirSync(dbPath, { recursive: true });
       }
 
-      const adapter = new FileSystemAdapter(dbPath);
-      const db = new Monarch(adapter);
-
-      // Create metadata file to mark initialization
+      // Create metadata file to mark initialization BEFORE creating the adapter
       const metaFile = join(dbPath, '.monarch-meta.json');
       const metadata = {
         initialized: true,
@@ -99,6 +96,8 @@ registry.register({
       };
       writeFileSync(metaFile, JSON.stringify(metadata, null, 2));
 
+      const adapter = new FileSystemAdapter(join(dbPath, 'data.json'));
+      const db = new Monarch(adapter);
       // eslint-disable-next-line no-console
       console.log(`✓ Database initialized at ${dbPath}`);
       const stats = db.getStats();
@@ -125,7 +124,7 @@ registry.register({
         mkdirSync(dbPath, { recursive: true });
       }
 
-      const adapter = new FileSystemAdapter(dbPath);
+      const adapter = new FileSystemAdapter(join(dbPath, 'data.json'));
       const db = new Monarch(adapter);
 
       if (!args[0]) {
@@ -179,7 +178,7 @@ registry.register({
         mkdirSync(dbPath, { recursive: true });
       }
 
-      const adapter = new FileSystemAdapter(dbPath);
+      const adapter = new FileSystemAdapter(join(dbPath, 'data.json'));
       const db = new Monarch(adapter);
 
       const collectionName = args[0];
@@ -299,10 +298,7 @@ registry.register({
         mkdirSync(dbPath, { recursive: true });
       }
 
-      const adapter = new FileSystemAdapter(dbPath);
-      const db = new Monarch(adapter);
-
-      // Create metadata file to mark initialization
+      // Create metadata file to mark initialization BEFORE creating the adapter
       const metaFile = join(dbPath, '.monarch-meta.json');
       const metadata = {
         initialized: true,
@@ -311,6 +307,9 @@ registry.register({
         collections: []
       };
       writeFileSync(metaFile, JSON.stringify(metadata, null, 2));
+
+      const adapter = new FileSystemAdapter(join(dbPath, 'data.json'));
+      const db = new Monarch(adapter);
 
       // eslint-disable-next-line no-console
       console.log(`✓ Database initialized at ${dbPath}`);
@@ -338,7 +337,7 @@ registry.register({
         mkdirSync(dbPath, { recursive: true });
       }
 
-      const adapter = new FileSystemAdapter(dbPath);
+      const adapter = new FileSystemAdapter(join(dbPath, 'data.json'));
       const db = new Monarch(adapter);
 
       if (!args[0]) {
@@ -347,6 +346,8 @@ registry.register({
 
       const collectionName = args[0];
       db.addCollection(collectionName);
+      // Save the database to persist the collection structure
+      await db.save();
 
       // Save collection metadata
       const metaFile = join(dbPath, '.monarch-meta.json');
@@ -384,7 +385,7 @@ registry.register({
   usage: 'insert <collection> <file> --path <path>',
   examples: ['insert users data.json --path ./my-db', 'insert products batch.json --path ./data'],
   execute: async (args, options) => {
-    const dbPath = (typeof options.path === 'string' ? options.path : undefined) || './monarch-data';
+    const dbPath = (typeof options.path === 'string' ? options.path : undefined) || args[2] || './monarch-data';
 
     try {
       // Ensure directory exists
@@ -392,8 +393,27 @@ registry.register({
         mkdirSync(dbPath, { recursive: true });
       }
 
-      const adapter = new FileSystemAdapter(dbPath);
+      const adapter = new FileSystemAdapter(join(dbPath, 'data.json'));
       const db = new Monarch(adapter);
+      // Load existing collections from metadata
+      try {
+        const metaFile = join(dbPath, ".monarch-meta.json");
+        if (existsSync(metaFile)) {
+          const metadata = JSON.parse(readFileSync(metaFile, "utf-8"));
+          if (metadata.collections) {
+            metadata.collections.forEach((name: string) => {
+              if (!db.getCollection(name)) {
+                db.addCollection(name);
+              }
+            });
+          }
+        }
+      } catch {
+        // Ignore metadata loading errors
+      }
+
+      // Load existing data from file
+      await db.load();
 
       const collectionName = args[0];
       const filePath = args[1];
@@ -413,7 +433,14 @@ registry.register({
       const data = JSON.parse(readFileSync(filePath, 'utf-8'));
       const docs = Array.isArray(data) ? data : [data];
       const inserted = collection.insert(docs);
-
+      // Save the database
+      // Save the database
+      const serializedData = db.serialize();
+      try {
+        await db.save();
+      } catch (saveError) {
+        throw saveError;
+      }
       // eslint-disable-next-line no-console
       console.log(`✓ Inserted ${inserted?.length || 0} document(s) into '${collectionName}'`);
     } catch (error) {
@@ -434,7 +461,7 @@ registry.register({
     'query products ./my-db \'{"category": "electronics"}\' --sort price --limit 10'
   ],
   execute: async (args, options) => {
-    const dbPath = (typeof options.path === 'string' ? options.path : undefined) || args[2] || './monarch-data';
+    const dbPath = (typeof options.path === 'string' ? options.path : undefined) || (args[1] && (args[1].startsWith('./') || args[1].startsWith('/')) ? args[1] : undefined) || './monarch-data';
 
     try {
       // Ensure directory exists
@@ -442,7 +469,7 @@ registry.register({
         mkdirSync(dbPath, { recursive: true });
       }
 
-      const adapter = new FileSystemAdapter(dbPath);
+      const adapter = new FileSystemAdapter(join(dbPath, 'data.json'));
       const db = new Monarch(adapter);
 
       // Load existing collections from metadata
@@ -462,8 +489,25 @@ registry.register({
         // Ignore metadata loading errors
       }
 
+      // Load data from file
+      await db.load();
+
       const collectionName = args[0];
-      const queryStr = (typeof options.path === 'string' ? options.path : undefined) ? args[1] : (args[1] && !args[1].startsWith('./') ? args[1] : undefined);
+      let queryArgIndex = 1;
+
+      // If path option is provided, query is args[1], otherwise check args[1] and args[2]
+      let queryStr;
+      if (typeof options.path === 'string') {
+        queryStr = args[1];
+      } else {
+        // Check if args[1] looks like a query (not a path)
+        if (args[1] && !args[1].startsWith('./') && !args[1].startsWith('/')) {
+          queryStr = args[1];
+        } else if (args[2]) {
+          queryStr = args[2];
+          queryArgIndex = 2;
+        }
+      }
 
       if (!collectionName) {
         throw new Error('Collection name required. Usage: query <collection> [--path <path>] [query]');
@@ -548,8 +592,28 @@ registry.register({
         mkdirSync(dbPath, { recursive: true });
       }
 
-      const adapter = new FileSystemAdapter(dbPath);
+      const adapter = new FileSystemAdapter(join(dbPath, 'data.json'));
       const db = new Monarch(adapter);
+
+      // Load existing collections from metadata
+      try {
+        const metaFile = join(dbPath, '.monarch-meta.json');
+        if (existsSync(metaFile)) {
+          const metadata = JSON.parse(readFileSync(metaFile, 'utf-8'));
+          if (metadata.collections) {
+            metadata.collections.forEach((name: string) => {
+              if (!db.getCollection(name)) {
+                db.addCollection(name);
+              }
+            });
+          }
+        }
+      } catch {
+        // Ignore metadata loading errors
+      }
+
+      // Load data from file
+      await db.load();
 
       const stats = db.getStats();
 
@@ -608,7 +672,7 @@ registry.register({
         mkdirSync(dbPath, { recursive: true });
       }
 
-      const adapter = new FileSystemAdapter(dbPath);
+      const adapter = new FileSystemAdapter(join(dbPath, 'data.json'));
       const db = new Monarch(adapter);
 
       // Load existing collections from metadata
@@ -665,13 +729,18 @@ registry.register({
   usage: 'batch-insert <collection> <file1> [file2...] [--path <path>]',
   examples: ['batch-insert users users1.json users2.json --path ./my-db', 'batch-insert products users1.json users2.json ./my-db'],
   execute: async (args, options) => {
+    const collectionName = args[0];
+    const dbPath = (typeof options.path === 'string' ? options.path : undefined) || args[args.length - 1] || './monarch-data';
+    const files = (typeof options.path === 'string' ? options.path : undefined) ?
+      args.slice(1) : args.slice(1, -1);
+
     try {
       // Ensure directory exists
       if (!existsSync(dbPath)) {
         mkdirSync(dbPath, { recursive: true });
       }
 
-      const adapter = new FileSystemAdapter(dbPath);
+      const adapter = new FileSystemAdapter(join(dbPath, 'data.json'));
       const db = new Monarch(adapter);
 
       // Load existing collections from metadata
@@ -691,10 +760,8 @@ registry.register({
         // Ignore metadata loading errors
       }
 
-      const collectionName = args[0];
-      const dbPath = (typeof options.path === 'string' ? options.path : undefined) || args[args.length - 1] || './monarch-data';
-      const files = (typeof options.path === 'string' ? options.path : undefined) ?
-        args.slice(1, -1) : args.slice(1, -1);
+      // Load existing data from file
+      await db.load();
 
       if (!collectionName) {
         throw new Error('Collection name required. Usage: batch-insert <collection> <files...>');
@@ -722,6 +789,9 @@ registry.register({
           console.error(`❌ ${filePath}: Failed to process - ${error instanceof Error ? error.message : String(error)}`);
         }
       }
+
+      // Save the database
+      await db.save();
 
       // eslint-disable-next-line no-console
       console.log(`\n✅ Batch insert complete: ${totalInserted} total documents inserted into '${collectionName}'`);

@@ -5,6 +5,32 @@ All notable changes to Monarch Database will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.1] - 2025-11-03
+
+### ✨ Added
+
+#### CLI Enhancements
+- **Advanced Query Features**: Added JSON-based filtering, sorting, field selection, and result limiting
+- **Batch Insert Operations**: Process multiple JSON files simultaneously with per-file error reporting
+- **Sequential ID Persistence**: Document IDs now increment properly across CLI sessions
+- **Enhanced Error Handling**: Better error messages and graceful failure handling
+
+#### Data Persistence Fixes
+- **ID Counter Persistence**: Fixed document ID generation to persist between CLI commands
+- **Collection State Management**: Collections now properly save/load their internal state
+- **Data Integrity**: Ensured all operations maintain data consistency across sessions
+
+### 🔧 Fixed
+- Document ID counter reset issues in CLI operations
+- Batch insert operations not saving data properly
+- Query command argument parsing for complex queries
+- Collection metadata not persisting between commands
+
+### 📚 Documentation
+- Updated CLI documentation with advanced query examples
+- Added comprehensive batch operation examples
+- Improved troubleshooting guides for CLI usage
+
 ## [1.0.0] - 2025-11-03
 
 ### 🎉 Major Release: Enterprise-Ready In-Memory Database

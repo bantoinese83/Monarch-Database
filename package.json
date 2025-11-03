@@ -34,7 +34,7 @@
     "test:performance": "node tests/performance/load-test.ts",
     "analyze:bundle": "vite-bundle-visualizer",
     "size:check": "bundlesize",
-    "cli": "node dist/cli/index.js"
+    "cli": "tsx src/cli/index.ts"
   },
   "bin": {
     "monarch": "./dist/cli/index.js"

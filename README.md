@@ -714,73 +714,95 @@ npx monarch-database --help
 ```bash
 # Database Management
 monarch init [path]                    # Initialize a new database
-monarch create <collection> <path>     # Create a collection
-monarch collections <path>             # List all collections
+monarch create <collection> [path]     # Create a collection
+monarch collections [path]             # List all collections
 
 # Data Operations
-monarch insert <collection> <file> <path>    # Insert documents from JSON file
-monarch batch-insert <collection> <files...> <path>  # Batch insert multiple files
+monarch insert <collection> <file> [--path <path>]    # Insert documents from JSON file
+monarch batch-insert <collection> <files...> [--path <path>]  # Batch insert multiple files
 
 # Querying & Analytics
-monarch query <collection> <path> [query] [--sort field] [--limit n] [--fields list]
-monarch stats <path> [--detailed]       # Database statistics
+monarch query <collection> [path] [query] [--sort <field>] [--limit <n>] [--fields <list>]
+monarch stats [path] [--detailed]       # Database statistics
 
-# Advanced Features
+# Help & Information
 monarch help [command]                  # Get help for commands
+monarch --help                          # Show all commands and options
 ```
 
 ### CLI Examples
 
 ```bash
 # Initialize a new database
-npm run cli init ./my-app-db
+npx tsx src/cli/index.ts init ./my-app-db
 # ✓ Database initialized at ./my-app-db
 
 # Create collections
-npm run cli create users ./my-app-db
-npm run cli create products ./my-app-db
+npx tsx src/cli/index.ts create users ./my-app-db
+npx tsx src/cli/index.ts create products ./my-app-db
 # ✓ Collection 'users' created
 # ✓ Collection 'products' created
 
-# Insert sample data
+# Insert single document from stdin
+echo '{"name": "Alice", "age": 30, "city": "NYC"}' | npx tsx src/cli/index.ts insert users /dev/stdin ./my-app-db
+# ✓ Inserted 1 document(s) into 'users'
+
+# Insert multiple documents from JSON file
 echo '[
-  {"name": "Alice", "age": 30, "city": "NYC", "role": "admin"},
-  {"name": "Bob", "age": 25, "city": "LA", "role": "user"}
+  {"name": "Bob", "age": 25, "city": "LA"},
+  {"name": "Charlie", "age": 35, "city": "Chicago"}
 ]' > users.json
 
-npm run cli insert users users.json ./my-app-db
+npx tsx src/cli/index.ts insert users users.json ./my-app-db
 # ✓ Inserted 2 document(s) into 'users'
 
-# Query with advanced options
-npm run cli query users ./my-app-db --sort name --limit 1
-# Found 1 document(s):
-# [{"_id": "...", "name": "Alice", "age": 30, "city": "NYC", "role": "admin"}]
+# Batch insert multiple files
+npx tsx src/cli/index.ts batch-insert products products1.json products2.json ./my-app-db
+# ✓ products1.json: 3 documents
+# ✓ products2.json: 5 documents
+# ✅ Batch insert complete: 8 total documents inserted
 
-# Complex queries with JSON
-npm run cli query users ./my-app-db '{"age": {"$gte": 25}}' --fields name,age
-# Found 2 document(s):
-# [{"name": "Alice", "age": 30}, {"name": "Bob", "age": 25}]
+# Query all documents
+npx tsx src/cli/index.ts query users ./my-app-db
+# Found 3 document(s): [...]
 
-# Get detailed statistics
-npm run cli stats ./my-app-db --detailed
+# Advanced filtering with JSON queries
+npx tsx src/cli/index.ts query users ./my-app-db '{"age": {"$gte": 30}}'
+# Found 2 document(s): Alice (30), Charlie (35)
+
+# Sorting results
+npx tsx src/cli/index.ts query users ./my-app-db --sort age
+# Returns: Bob (25), Alice (30), Charlie (35)
+
+# Field selection
+npx tsx src/cli/index.ts query users ./my-app-db --fields name,city
+# Returns: [{"name": "Alice", "city": "NYC"}, ...]
+
+# Limiting results
+npx tsx src/cli/index.ts query users ./my-app-db --limit 2
+# Returns: First 2 documents only
+
+# Combined: Filter + Sort + Fields + Limit
+npx tsx src/cli/index.ts query users ./my-app-db '{"city": "NYC"}' --sort age --fields name,age --limit 1
+# Complex query with all options
+
+# Database statistics
+npx tsx src/cli/index.ts stats ./my-app-db
 # Database Statistics:
 #   Path: ./my-app-db
 #   Collections: 2
-#   Total Documents: 2
-#
-# Collections:
-#   users: 2 documents
-#   products: 0 documents
+#   Total Documents: 11
 ```
 
 ### CLI Features
 
-- **🔄 Data Persistence**: Collections and data persist between CLI sessions
-- **⚡ Advanced Querying**: Sort, limit, field selection, and complex JSON queries
-- **📦 Batch Operations**: Process multiple JSON files simultaneously
+- **🔄 Data Persistence**: Collections and data persist between CLI sessions with proper ID management
+- **⚡ Advanced Querying**: JSON-based filtering, sorting, field selection, and result limiting
+- **📦 Batch Operations**: Process multiple JSON files simultaneously with error reporting
+- **🔢 Sequential IDs**: Document IDs increment properly across all CLI operations
 - **📊 Analytics**: Detailed database statistics and collection metrics
-- **🛡️ Error Handling**: Clear, actionable error messages
-- **🎯 Production Ready**: Enterprise-grade CLI for database operations
+- **🛡️ Error Handling**: Clear, actionable error messages and graceful failure handling
+- **🎯 Production Ready**: Enterprise-grade CLI for database operations and debugging
 
 ## 🚨 Troubleshooting
 
