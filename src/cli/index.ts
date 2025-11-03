@@ -144,7 +144,7 @@ registry.register({
           metadata.collections.push(collectionName);
         }
         writeFileSync(metaFile, JSON.stringify(metadata, null, 2));
-      } catch (e) {
+      } catch {
         // Metadata file doesn't exist or is corrupted, recreate
         const metadata = {
           initialized: true,
@@ -357,7 +357,7 @@ registry.register({
           metadata.collections.push(collectionName);
         }
         writeFileSync(metaFile, JSON.stringify(metadata, null, 2));
-      } catch (e) {
+      } catch {
         // Metadata file doesn't exist or is corrupted, recreate
         const metadata = {
           initialized: true,
@@ -434,8 +434,6 @@ registry.register({
     'query products ./my-db \'{"category": "electronics"}\' --sort price --limit 10'
   ],
   execute: async (args, options) => {
-    const dbPath = (typeof options.path === 'string' ? options.path : undefined) || args[1] || './monarch-data';
-
     try {
       // Ensure directory exists
       if (!existsSync(dbPath)) {
@@ -458,7 +456,7 @@ registry.register({
             });
           }
         }
-      } catch (e) {
+      } catch {
         // Ignore metadata loading errors
       }
 
@@ -480,7 +478,7 @@ registry.register({
       if (queryStr) {
         try {
           query = JSON.parse(queryStr);
-        } catch (e) {
+        } catch {
           throw new Error(`Invalid query JSON: ${queryStr}`);
         }
       }
@@ -510,7 +508,7 @@ registry.register({
       if (typeof options.fields === 'string') {
         const fields = options.fields.split(',').map(f => f.trim());
         results = results.map(doc => {
-          const filtered: any = {};
+          const filtered: Record<string, unknown> = {};
           fields.forEach(field => {
             if (doc[field] !== undefined) {
               filtered[field] = doc[field];
@@ -580,7 +578,7 @@ registry.register({
             // eslint-disable-next-line no-console
             console.log('  (No collections found)');
           }
-        } catch (e) {
+        } catch {
           // Metadata not available, show basic info
           // eslint-disable-next-line no-console
           console.log('  (Run detailed stats after creating collections)');
@@ -624,7 +622,7 @@ registry.register({
             });
           }
         }
-      } catch (e) {
+      } catch {
         // Ignore metadata loading errors
       }
 
@@ -646,7 +644,7 @@ registry.register({
           // eslint-disable-next-line no-console
           console.log('  (No collections found)');
         }
-      } catch (e) {
+      } catch {
         // Metadata not available
         // eslint-disable-next-line no-console
         console.log('  (Database not initialized or no collections)');
@@ -665,8 +663,6 @@ registry.register({
   usage: 'batch-insert <collection> <file1> [file2...] [--path <path>]',
   examples: ['batch-insert users users1.json users2.json --path ./my-db', 'batch-insert products users1.json users2.json ./my-db'],
   execute: async (args, options) => {
-    const dbPath = (typeof options.path === 'string' ? options.path : undefined) || args[args.length - 1] || './monarch-data';
-
     try {
       // Ensure directory exists
       if (!existsSync(dbPath)) {
@@ -689,7 +685,7 @@ registry.register({
             });
           }
         }
-      } catch (e) {
+      } catch {
         // Ignore metadata loading errors
       }
 
@@ -740,7 +736,8 @@ registry.register({
   description: 'Show help information',
   usage: 'help [command]',
   examples: ['help', 'help query'],
-  execute: async (args, options) => {
+  // eslint-disable-next-line no-unused-vars
+  execute: async (args, _options) => {
     const command = args[0];
     if (command) {
       const cmd = registry.get(command);
