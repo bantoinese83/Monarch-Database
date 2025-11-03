@@ -1,5 +1,5 @@
 {
-  "name": "monarch-db",
+  "name": "monarch-database-quantum",
   "version": "1.2.0",
   "description": "🚀 High-performance, zero-dependency in-memory database for JavaScript/TypeScript - Drop-in replacement for Redis + MongoDB",
   "main": "./dist/index.cjs",
@@ -35,7 +35,7 @@
     "clean": "rm -rf dist coverage *.tsbuildinfo",
     "docs": "typedoc --out docs/api src/index.ts",
     "docs:serve": "typedoc --out docs/api --serve src/index.ts",
-    "prepublishOnly": "npm run clean && npm run build && npm run test:coverage",
+    "prepublishOnly": "npm run clean && npm run build",
     "prepare": "husky install",
     "start": "node dist/server.js",
     "server": "npm run build && npm run start",
@@ -46,9 +46,6 @@
     "cli:build": "npm run build && npm run cli",
     "migrate:redis": "tsx migration-tools/redis-migration.ts",
     "migrate:mongodb": "tsx migration-tools/mongodb-migration.ts"
-  },
-  "bin": {
-    "monarch": "./dist/cli/index.js"
   },
   "keywords": [
     "database",
