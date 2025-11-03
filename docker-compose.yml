@@ -1,34 +1,106 @@
 version: '3.8'
 
 services:
-  monarch:
+  monarch-dev:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: monarch-db
+      target: development
     ports:
-      - "7331:7331"
+      - "3000:3000"  # HTTP API
+      - "7331:7331"  # Database port
     volumes:
-      - ./data:/app/data
-      - ./logs:/app/logs
+      - .:/app
+      - /app/node_modules
+      - ./data:/app/data  # Persistent data volume
     environment:
-      - NODE_ENV=production
-      - MONARCH_LOG_LEVEL=info
-      - MONARCH_DATA_DIR=/app/data
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "node", "-e", "require('http').get('http://localhost:7331/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"]
-      interval: 30s
-      timeout: 3s
-      retries: 3
-      start_period: 10s
+      - NODE_ENV=development
+      - MONARCH_PORT=7331
+      - MONARCH_HTTP_PORT=3000
+      - MONARCH_DATA_PATH=/app/data
+      - MONARCH_ENCRYPTION_KEY=${MONARCH_ENCRYPTION_KEY:-}
+    command: npm run dev
     networks:
       - monarch-network
-    labels:
-      - "com.monarch.service=database"
-      - "com.monarch.version=1.0.0"
+
+  monarch-test:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: test
+    volumes:
+      - .:/app
+      - /app/node_modules
+    environment:
+      - NODE_ENV=test
+      - MONARCH_DATA_PATH=/tmp/monarch-test
+    command: npm test
+    networks:
+      - monarch-network
+    depends_on:
+      - monarch-dev
+
+  monarch-benchmark:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+    environment:
+      - NODE_ENV=production
+      - MONARCH_DATA_PATH=/tmp/monarch-benchmark
+    command: npm run benchmark
+    networks:
+      - monarch-network
+
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=200h'
+      - '--web.enable-lifecycle'
+    networks:
+      - monarch-network
+
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3001:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning
+      - ./monitoring/grafana-dashboard.json:/var/lib/grafana/dashboards/monarch-dashboard.json
+    networks:
+      - monarch-network
+    depends_on:
+      - prometheus
+
+  # Optional: Redis for comparison/benchmarking
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    networks:
+      - monarch-network
+
+volumes:
+  prometheus_data:
+  grafana_data:
+  redis_data:
 
 networks:
   monarch-network:
     driver: bridge
-

@@ -27,7 +27,7 @@
     "format:check": "prettier --check src/**/*.ts",
     "type-check": "tsc --noEmit",
     "clean": "rm -rf dist coverage *.tsbuildinfo",
-    "docs": "typedoc",
+    "docs": "typedoc --out docs/api src/index.ts",
     "prepublishOnly": "npm run build && npm run test:coverage",
     "start": "node dist/server.js",
     "server": "npm run build && npm run start",
