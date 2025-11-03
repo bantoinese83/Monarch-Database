@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monarch Database Admin</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <nav class="sidebar">
+            <div class="sidebar-header">
+                <i class="fas fa-database"></i>
+                <span>Monarch Admin</span>
+            </div>
+
+            <div class="sidebar-menu">
+                <div class="menu-item active" data-page="dashboard">
+                    <i class="fas fa-tachometer-alt"></i>
+                    <span>Dashboard</span>
+                </div>
+
+                <div class="menu-item" data-page="collections">
+                    <i class="fas fa-folder-open"></i>
+                    <span>Collections</span>
+                </div>
+
+                <div class="menu-item" data-page="query">
+                    <i class="fas fa-terminal"></i>
+                    <span>Query</span>
+                </div>
+
+                <div class="menu-item" data-page="schema">
+                    <i class="fas fa-sitemap"></i>
+                    <span>Schema</span>
+                </div>
+
+                <div class="menu-item" data-page="performance">
+                    <i class="fas fa-chart-line"></i>
+                    <span>Performance</span>
+                </div>
+
+                <div class="menu-item" data-page="migration">
+                    <i class="fas fa-exchange-alt"></i>
+                    <span>Migration</span>
+                </div>
+            </div>
+
+            <div class="sidebar-footer">
+                <div class="connection-status">
+                    <div class="status-indicator" id="connectionStatus"></div>
+                    <span id="connectionText">Connecting...</span>
+                </div>
+                <div class="quantum-badge">
+                    <i class="fas fa-atom"></i>
+                    <span>Quantum DB</span>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Header -->
+            <header class="header">
+                <div class="header-left">
+                    <button class="menu-toggle" id="menuToggle">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <h1 id="pageTitle">Dashboard</h1>
+                </div>
+
+                <div class="header-right">
+                    <div class="quantum-indicator">
+                        <i class="fas fa-microchip"></i>
+                        <span id="quantumStatus">Quantum Engine: Active</span>
+                    </div>
+
+                    <button class="btn btn-secondary" id="refreshBtn">
+                        <i class="fas fa-sync-alt"></i>
+                        Refresh
+                    </button>
+                </div>
+            </header>
+
+            <!-- Page Content -->
+            <div class="page-content" id="pageContent">
+                <!-- Dashboard Page -->
+                <div id="dashboard-page" class="page active">
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-icon">
+                                <i class="fas fa-folder-open"></i>
+                            </div>
+                            <div class="stat-content">
+                                <div class="stat-value" id="totalCollections">0</div>
+                                <div class="stat-label">Collections</div>
+                            </div>
+                        </div>
+
+                        <div class="stat-card">
+                            <div class="stat-icon">
+                                <i class="fas fa-file-alt"></i>
+                            </div>
+                            <div class="stat-content">
+                                <div class="stat-value" id="totalDocuments">0</div>
+                                <div class="stat-label">Documents</div>
+                            </div>
+                        </div>
+
+                        <div class="stat-card">
+                            <div class="stat-icon">
+                                <i class="fas fa-database"></i>
+                            </div>
+                            <div class="stat-content">
+                                <div class="stat-value" id="dbSize">0 MB</div>
+                                <div class="stat-label">Database Size</div>
+                            </div>
+                        </div>
+
+                        <div class="stat-card">
+                            <div class="stat-icon">
+                                <i class="fas fa-tachometer-alt"></i>
+                            </div>
+                            <div class="stat-content">
+                                <div class="stat-value" id="avgResponseTime">0ms</div>
+                                <div class="stat-label">Avg Response</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="dashboard-charts">
+                        <div class="chart-container">
+                            <h3>Operations Per Second</h3>
+                            <canvas id="opsChart"></canvas>
+                        </div>
+
+                        <div class="chart-container">
+                            <h3>Memory Usage</h3>
+                            <canvas id="memoryChart"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="recent-activity">
+                        <h3>Recent Activity</h3>
+                        <div class="activity-list" id="activityList">
+                            <div class="activity-item">
+                                <div class="activity-icon">
+                                    <i class="fas fa-play"></i>
+                                </div>
+                                <div class="activity-content">
+                                    <div class="activity-message">Monarch Database started</div>
+                                    <div class="activity-time">2 minutes ago</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Collections Page -->
+                <div id="collections-page" class="page">
+                    <div class="page-header">
+                        <h2>Collections</h2>
+                        <button class="btn btn-primary" id="createCollectionBtn">
+                            <i class="fas fa-plus"></i>
+                            Create Collection
+                        </button>
+                    </div>
+
+                    <div class="collections-grid" id="collectionsGrid">
+                        <!-- Collections will be loaded here -->
+                    </div>
+                </div>
+
+                <!-- Query Page -->
+                <div id="query-page" class="page">
+                    <div class="query-interface">
+                        <div class="query-editor">
+                            <div class="query-tabs">
+                                <button class="query-tab active" data-tab="find">Find</button>
+                                <button class="query-tab" data-tab="insert">Insert</button>
+                                <button class="query-tab" data-tab="update">Update</button>
+                                <button class="query-tab" data-tab="delete">Delete</button>
+                            </div>
+
+                            <div class="query-inputs">
+                                <div class="query-input-group">
+                                    <label>Collection:</label>
+                                    <select id="queryCollection" class="form-control">
+                                        <option value="">Select collection...</option>
+                                    </select>
+                                </div>
+
+                                <div class="query-input-group" id="findQueryGroup">
+                                    <label>Query:</label>
+                                    <textarea id="findQuery" class="form-control" rows="3" placeholder='{"status": "active"}'></textarea>
+                                </div>
+
+                                <div class="query-input-group" id="insertQueryGroup" style="display: none;">
+                                    <label>Document:</label>
+                                    <textarea id="insertDocument" class="form-control" rows="6" placeholder='{"name": "John Doe", "email": "john@example.com"}'></textarea>
+                                </div>
+
+                                <div class="query-input-group" id="updateQueryGroup" style="display: none;">
+                                    <label>Filter:</label>
+                                    <textarea id="updateFilter" class="form-control" rows="2" placeholder='{"_id": "doc_123"}'></textarea>
+                                    <label>Update:</label>
+                                    <textarea id="updateDocument" class="form-control" rows="3" placeholder='{"$set": {"status": "inactive"}}'></textarea>
+                                </div>
+
+                                <div class="query-input-group" id="deleteQueryGroup" style="display: none;">
+                                    <label>Filter:</label>
+                                    <textarea id="deleteFilter" class="form-control" rows="2" placeholder='{"status": "inactive"}'></textarea>
+                                </div>
+
+                                <div class="query-actions">
+                                    <button class="btn btn-primary" id="executeQueryBtn">
+                                        <i class="fas fa-play"></i>
+                                        Execute
+                                    </button>
+                                    <button class="btn btn-secondary" id="clearQueryBtn">
+                                        <i class="fas fa-trash"></i>
+                                        Clear
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="query-results">
+                            <div class="results-header">
+                                <h3>Results</h3>
+                                <div class="results-info">
+                                    <span id="resultsCount">0 documents</span>
+                                    <span id="executionTime">0ms</span>
+                                </div>
+                            </div>
+
+                            <div class="results-content">
+                                <pre id="queryResults">Execute a query to see results...</pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Schema Page -->
+                <div id="schema-page" class="page">
+                    <div class="page-header">
+                        <h2>Schema Explorer</h2>
+                        <button class="btn btn-secondary" id="refreshSchemaBtn">
+                            <i class="fas fa-sync-alt"></i>
+                            Refresh
+                        </button>
+                    </div>
+
+                    <div class="schema-content">
+                        <div class="schema-tree" id="schemaTree">
+                            <!-- Schema will be loaded here -->
+                        </div>
+
+                        <div class="schema-details" id="schemaDetails">
+                            <div class="schema-placeholder">
+                                <i class="fas fa-sitemap"></i>
+                                <p>Select a collection to view its schema</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Performance Page -->
+                <div id="performance-page" class="page">
+                    <div class="page-header">
+                        <h2>Performance Monitor</h2>
+                        <div class="performance-controls">
+                            <select id="timeRange" class="form-control">
+                                <option value="1m">Last Minute</option>
+                                <option value="5m">Last 5 Minutes</option>
+                                <option value="15m">Last 15 Minutes</option>
+                                <option value="1h" selected>Last Hour</option>
+                            </select>
+                            <button class="btn btn-secondary" id="refreshPerformanceBtn">
+                                <i class="fas fa-sync-alt"></i>
+                                Refresh
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="performance-grid">
+                        <div class="performance-metric">
+                            <h3>Response Time</h3>
+                            <div class="metric-value" id="avgResponseTimeMetric">0ms</div>
+                            <canvas id="responseTimeChart"></canvas>
+                        </div>
+
+                        <div class="performance-metric">
+                            <h3>Throughput</h3>
+                            <div class="metric-value" id="throughputMetric">0 ops/sec</div>
+                            <canvas id="throughputChart"></canvas>
+                        </div>
+
+                        <div class="performance-metric">
+                            <h3>Memory Usage</h3>
+                            <div class="metric-value" id="memoryUsageMetric">0 MB</div>
+                            <canvas id="memoryUsageChart"></canvas>
+                        </div>
+
+                        <div class="performance-metric">
+                            <h3>Error Rate</h3>
+                            <div class="metric-value" id="errorRateMetric">0%</div>
+                            <canvas id="errorRateChart"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="performance-tables">
+                        <div class="performance-table">
+                            <h3>Slow Queries</h3>
+                            <table id="slowQueriesTable">
+                                <thead>
+                                    <tr>
+                                        <th>Query</th>
+                                        <th>Duration</th>
+                                        <th>Timestamp</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td colspan="3">No slow queries detected</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Migration Page -->
+                <div id="migration-page" class="page">
+                    <div class="page-header">
+                        <h2>Data Migration Tools</h2>
+                        <p>Migrate data from Redis or MongoDB to Monarch Database</p>
+                    </div>
+
+                    <div class="migration-tools">
+                        <div class="migration-card">
+                            <div class="migration-header">
+                                <i class="fas fa-exchange-alt"></i>
+                                <h3>Redis Migration</h3>
+                            </div>
+                            <div class="migration-content">
+                                <p>Migrate Redis data structures to Monarch Database</p>
+                                <div class="migration-form">
+                                    <div class="form-group">
+                                        <label>Redis Host:</label>
+                                        <input type="text" id="redisHost" class="form-control" value="localhost" placeholder="localhost">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Redis Port:</label>
+                                        <input type="number" id="redisPort" class="form-control" value="6379" placeholder="6379">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Redis Password (optional):</label>
+                                        <input type="password" id="redisPassword" class="form-control" placeholder="password">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Data Types to Migrate:</label>
+                                        <div class="checkbox-group">
+                                            <label><input type="checkbox" id="migrateStrings" checked> Strings</label>
+                                            <label><input type="checkbox" id="migrateHashes" checked> Hashes</label>
+                                            <label><input type="checkbox" id="migrateLists" checked> Lists</label>
+                                            <label><input type="checkbox" id="migrateSets" checked> Sets</label>
+                                            <label><input type="checkbox" id="migrateZsets" checked> Sorted Sets</label>
+                                        </div>
+                                    </div>
+                                    <button class="btn btn-primary" id="startRedisMigration">
+                                        <i class="fas fa-play"></i>
+                                        Start Redis Migration
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="migration-card">
+                            <div class="migration-header">
+                                <i class="fas fa-exchange-alt"></i>
+                                <h3>MongoDB Migration</h3>
+                            </div>
+                            <div class="migration-content">
+                                <p>Migrate MongoDB collections to Monarch Database</p>
+                                <div class="migration-form">
+                                    <div class="form-group">
+                                        <label>MongoDB URI:</label>
+                                        <input type="text" id="mongoUri" class="form-control" value="mongodb://localhost:27017" placeholder="mongodb://localhost:27017">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Database Name:</label>
+                                        <input type="text" id="mongoDatabase" class="form-control" placeholder="mydatabase">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Collections to Migrate:</label>
+                                        <textarea id="mongoCollections" class="form-control" rows="3" placeholder="users,products,orders&#10;(leave empty for all collections)"></textarea>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Batch Size:</label>
+                                        <input type="number" id="mongoBatchSize" class="form-control" value="1000" placeholder="1000">
+                                    </div>
+                                    <button class="btn btn-primary" id="startMongoMigration">
+                                        <i class="fas fa-play"></i>
+                                        Start MongoDB Migration
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="migration-progress" id="migrationProgress" style="display: none;">
+                        <div class="progress-header">
+                            <h3>Migration Progress</h3>
+                            <div class="progress-status" id="migrationStatus">Initializing...</div>
+                        </div>
+
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+                        </div>
+
+                        <div class="progress-details">
+                            <div class="progress-stat">
+                                <span class="stat-label">Processed:</span>
+                                <span class="stat-value" id="processedCount">0</span>
+                            </div>
+                            <div class="progress-stat">
+                                <span class="stat-label">Total:</span>
+                                <span class="stat-value" id="totalCount">0</span>
+                            </div>
+                            <div class="progress-stat">
+                                <span class="stat-label">Errors:</span>
+                                <span class="stat-value" id="errorCount">0</span>
+                            </div>
+                            <div class="progress-stat">
+                                <span class="stat-label">Time Elapsed:</span>
+                                <span class="stat-value" id="elapsedTime">0s</span>
+                            </div>
+                        </div>
+
+                        <div class="migration-log">
+                            <h4>Migration Log</h4>
+                            <div class="log-content" id="migrationLog">
+                                <!-- Migration log will be appended here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modals -->
+    <div class="modal" id="collectionModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Create New Collection</h3>
+                <button class="modal-close" id="closeCollectionModal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Collection Name:</label>
+                    <input type="text" id="collectionName" class="form-control" placeholder="my_collection">
+                </div>
+                <div class="form-group">
+                    <label>Schema (optional):</label>
+                    <textarea id="collectionSchema" class="form-control" rows="5" placeholder='{
+  "type": "object",
+  "properties": {
+    "name": {"type": "string"},
+    "age": {"type": "number"}
+  }
+}'></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="cancelCollectionBtn">Cancel</button>
+                <button class="btn btn-primary" id="createCollectionConfirmBtn">Create</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="app.js"></script>
+</body>
+</html>

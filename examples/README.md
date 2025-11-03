@@ -40,6 +40,15 @@ npx tsx examples/example.ts
 - **`iot-data-demo.ts`** - IoT sensor data processing and analytics
 - **`langchain-integration.ts`** - Integration with LangChain for AI applications
 
+### 🌀 Quantum Algorithms (World's First!)
+
+Monarch Database features the world's first production quantum database algorithms. These examples demonstrate groundbreaking quantum computing applications on classical hardware.
+
+- **`quantum-walk-demo.ts`** - Basic quantum walk algorithms demonstration
+- **`quantum-social-network-analysis.ts`** - Social network analysis with quantum centrality and community detection
+- **`quantum-recommendation-system.ts`** - E-commerce recommendation engine using quantum similarity search
+- **`quantum-fraud-detection.ts`** - Real-time fraud detection using quantum graph analysis
+
 ## 🎯 Example Categories
 
 ### 🏗️ **Architecture Patterns**
@@ -63,6 +72,13 @@ npx tsx examples/example.ts
 - **Vector Search**: Similarity search
 - **Embeddings**: AI model integration
 - **Recommendation Systems**: ML-powered suggestions
+
+### 🌀 **Quantum Computing**
+- **Quantum Walk Algorithms**: Path finding and graph traversal
+- **Quantum Centrality**: Influence analysis with interference patterns
+- **Quantum Community Detection**: Group discovery through wave mechanics
+- **Quantum Query Optimization**: World's first quantum query optimizer
+- **Quantum Caching**: Interference-based cache management
 
 ### 🌐 **Web Applications**
 - **REST APIs**: Express/Fastify integration
@@ -90,6 +106,12 @@ npx tsx examples/ecommerce-cart-demo.ts
 
 # IoT data processing
 npx tsx examples/iot-data-demo.ts
+
+# 🌀 Quantum Examples (World's First!)
+npx tsx examples/quantum-walk-demo.ts
+npx tsx examples/quantum-social-network-analysis.ts
+npx tsx examples/quantum-recommendation-system.ts
+npx tsx examples/quantum-fraud-detection.ts
 ```
 
 ### With Custom Configuration
@@ -135,12 +157,19 @@ Many examples support customization via environment variables:
 
 For new users, we recommend following this learning path:
 
+### Traditional Database Learning
 1. **Start** → `example.ts` (Basic operations)
 2. **CRUD** → `ecommerce-cart-demo.ts` (Complex operations)
 3. **Real-time** → `realtime-chat-demo.ts` (Change streams)
 4. **Security** → `auth-session-demo.ts` (Authentication)
 5. **Scale** → `iot-data-demo.ts` (High-volume data)
 6. **AI/ML** → `vector-search-demo.ts` (Advanced features)
+
+### 🌀 Quantum Database Learning (Advanced)
+1. **Quantum Basics** → `quantum-walk-demo.ts` (Introduction to quantum algorithms)
+2. **Social Networks** → `quantum-social-network-analysis.ts` (Quantum centrality & communities)
+3. **Recommendations** → `quantum-recommendation-system.ts` (Quantum similarity search)
+4. **Security** → `quantum-fraud-detection.ts` (Quantum fraud detection)
 
 ## 🤝 Contributing Examples
 

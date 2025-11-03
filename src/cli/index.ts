@@ -8,7 +8,7 @@
 
 import { Monarch } from '../monarch';
 import { FileSystemAdapter } from '../adapters/filesystem';
-import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'fs';
+import { readFileSync, writeFileSync, mkdirSync, existsSync, unlinkSync } from 'fs';
 import { join } from 'path';
 
 /**
@@ -138,24 +138,78 @@ registry.register({
       const collectionName = args[0];
       db.addCollection(collectionName);
 
-      // Save collection metadata
+      // Save collection metadata with file locking to prevent race conditions
       const metaFile = join(dbPath, '.monarch-meta.json');
-      try {
-        const metadata = JSON.parse(readFileSync(metaFile, 'utf-8'));
-        metadata.collections = metadata.collections || [];
-        if (!metadata.collections.includes(collectionName)) {
-          metadata.collections.push(collectionName);
+      const lockFile = join(dbPath, '.monarch-meta.lock');
+
+      // Implement simple file locking
+      const maxRetries = 10;
+      const retryDelay = 100; // ms
+
+      for (let attempt = 0; attempt < maxRetries; attempt++) {
+        try {
+          // Try to acquire lock
+          if (existsSync(lockFile)) {
+            // Lock file exists, wait and retry
+            await new Promise(resolve => setTimeout(resolve, retryDelay));
+            continue;
+          }
+
+          // Create lock file
+          writeFileSync(lockFile, process.pid.toString());
+
+          try {
+            // Read existing metadata
+            let metadata: any = { collections: [] };
+            try {
+              const existingData = readFileSync(metaFile, 'utf-8');
+              metadata = JSON.parse(existingData);
+              metadata.collections = metadata.collections || [];
+            } catch {
+              // File doesn't exist or is corrupted, start fresh
+              metadata = {
+                initialized: true,
+                createdAt: new Date().toISOString(),
+                version: '1.0.0',
+                collections: []
+              };
+            }
+
+            // Add collection if not already present
+            if (!metadata.collections.includes(collectionName)) {
+              metadata.collections.push(collectionName);
+            }
+
+            // Write updated metadata
+            writeFileSync(metaFile, JSON.stringify(metadata, null, 2));
+
+            // Remove lock file
+            if (existsSync(lockFile)) {
+              unlinkSync(lockFile);
+            }
+
+            break; // Success, exit retry loop
+
+          } finally {
+            // Ensure lock file is removed even if an error occurs
+            try {
+              if (existsSync(lockFile)) {
+                unlinkSync(lockFile);
+              }
+          } catch {
+            // Ignore lock cleanup errors
+          }
+          }
+
+        } catch (error) {
+          if (attempt === maxRetries - 1) {
+            // eslint-disable-next-line no-console
+            console.error('❌ Failed to update metadata after maximum retries:', error);
+            throw new Error('Failed to save collection metadata due to concurrent access');
+          }
+          // Wait before retrying
+          await new Promise(resolve => setTimeout(resolve, retryDelay * (attempt + 1)));
         }
-        writeFileSync(metaFile, JSON.stringify(metadata, null, 2));
-      } catch {
-        // Metadata file doesn't exist or is corrupted, recreate
-        const metadata = {
-          initialized: true,
-          createdAt: new Date().toISOString(),
-          version: '1.0.0',
-          collections: [collectionName],
-        };
-        writeFileSync(metaFile, JSON.stringify(metadata, null, 2));
       }
 
       // eslint-disable-next-line no-console
@@ -382,24 +436,78 @@ registry.register({
       // Save the database to persist the collection structure
       await db.save();
 
-      // Save collection metadata
+      // Save collection metadata with file locking to prevent race conditions
       const metaFile = join(dbPath, '.monarch-meta.json');
-      try {
-        const metadata = JSON.parse(readFileSync(metaFile, 'utf-8'));
-        metadata.collections = metadata.collections || [];
-        if (!metadata.collections.includes(collectionName)) {
-          metadata.collections.push(collectionName);
+      const lockFile = join(dbPath, '.monarch-meta.lock');
+
+      // Implement simple file locking
+      const maxRetries = 10;
+      const retryDelay = 100; // ms
+
+      for (let attempt = 0; attempt < maxRetries; attempt++) {
+        try {
+          // Try to acquire lock
+          if (existsSync(lockFile)) {
+            // Lock file exists, wait and retry
+            await new Promise(resolve => setTimeout(resolve, retryDelay));
+            continue;
+          }
+
+          // Create lock file
+          writeFileSync(lockFile, process.pid.toString());
+
+          try {
+            // Read existing metadata
+            let metadata: any = { collections: [] };
+            try {
+              const existingData = readFileSync(metaFile, 'utf-8');
+              metadata = JSON.parse(existingData);
+              metadata.collections = metadata.collections || [];
+            } catch {
+              // File doesn't exist or is corrupted, start fresh
+              metadata = {
+                initialized: true,
+                createdAt: new Date().toISOString(),
+                version: '1.0.0',
+                collections: []
+              };
+            }
+
+            // Add collection if not already present
+            if (!metadata.collections.includes(collectionName)) {
+              metadata.collections.push(collectionName);
+            }
+
+            // Write updated metadata
+            writeFileSync(metaFile, JSON.stringify(metadata, null, 2));
+
+            // Remove lock file
+            if (existsSync(lockFile)) {
+              unlinkSync(lockFile);
+            }
+
+            break; // Success, exit retry loop
+
+          } finally {
+            // Ensure lock file is removed even if an error occurs
+            try {
+              if (existsSync(lockFile)) {
+                unlinkSync(lockFile);
+              }
+          } catch {
+            // Ignore lock cleanup errors
+          }
+          }
+
+        } catch (error) {
+          if (attempt === maxRetries - 1) {
+            // eslint-disable-next-line no-console
+            console.error('❌ Failed to update metadata after maximum retries:', error);
+            throw new Error('Failed to save collection metadata due to concurrent access');
+          }
+          // Wait before retrying
+          await new Promise(resolve => setTimeout(resolve, retryDelay * (attempt + 1)));
         }
-        writeFileSync(metaFile, JSON.stringify(metadata, null, 2));
-      } catch {
-        // Metadata file doesn't exist or is corrupted, recreate
-        const metadata = {
-          initialized: true,
-          createdAt: new Date().toISOString(),
-          version: '1.0.0',
-          collections: [collectionName],
-        };
-        writeFileSync(metaFile, JSON.stringify(metadata, null, 2));
       }
 
       // eslint-disable-next-line no-console
@@ -944,7 +1052,26 @@ registry.register({
  * Main CLI entry point
  */
 async function main() {
-  const { positional, options } = parseArgs(process.argv.slice(2));
+  const args = process.argv.slice(2);
+
+  // Input validation to prevent buffer overflow and malicious input
+  if (args.length > 100) {
+    // eslint-disable-next-line no-console
+    console.error('❌ Too many arguments provided. Maximum allowed: 100');
+    process.exit(1);
+  }
+
+  // Validate argument lengths (prevent DoS through large arguments)
+  const MAX_ARG_LENGTH = 10000; // 10KB per argument
+  for (const arg of args) {
+    if (typeof arg === 'string' && arg.length > MAX_ARG_LENGTH) {
+      // eslint-disable-next-line no-console
+      console.error(`❌ Argument too long. Maximum length: ${MAX_ARG_LENGTH} characters`);
+      process.exit(1);
+    }
+  }
+
+  const { positional, options } = parseArgs(args);
 
   if (positional.length === 0 || options.help) {
     const helpCmd = registry.get('help');

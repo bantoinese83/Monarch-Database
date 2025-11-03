@@ -43,7 +43,9 @@
     "analyze:bundle": "vite-bundle-visualizer",
     "size:check": "bundlesize",
     "cli": "tsx src/cli/index.ts",
-    "cli:build": "npm run build && npm run cli"
+    "cli:build": "npm run build && npm run cli",
+    "migrate:redis": "tsx migration-tools/redis-migration.ts",
+    "migrate:mongodb": "tsx migration-tools/mongodb-migration.ts"
   },
   "bin": {
     "monarch": "./dist/cli/index.js"

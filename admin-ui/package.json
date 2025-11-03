@@ -1,0 +1,30 @@
+{
+  "name": "monarch-admin-ui",
+  "version": "1.0.0",
+  "description": "Graphical Admin UI for Monarch Database",
+  "main": "app.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js --dev",
+    "build": "echo 'Static files ready for deployment'",
+    "serve": "npx serve . -p 3001"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "http-proxy-middleware": "^2.0.6"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2"
+  },
+  "keywords": [
+    "monarch",
+    "database",
+    "admin",
+    "ui",
+    "web-interface",
+    "dashboard"
+  ],
+  "author": "Monarch Database Team",
+  "license": "MIT"
+}

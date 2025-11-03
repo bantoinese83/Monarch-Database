@@ -104,10 +104,19 @@ export interface QueryPlan {
   estimatedCost: number;
   estimatedResults: number;
   executionSteps: QueryStep[];
+  // Quantum optimization fields
+  quantumOptimized?: boolean;
+  quantumAdvantage?: number;
+  executionTime?: number;
+  // Extended fields for quantum optimization
+  strategy?: any;
+  indexes?: string[];
+  joins?: any[];
+  filters?: any[];
 }
 
 export interface QueryStep {
-  type: 'scan' | 'index-lookup' | 'filter' | 'sort' | 'limit';
+  type: 'scan' | 'index-lookup' | 'filter' | 'sort' | 'limit' | 'quantum-optimized';
   description: string;
   cost: number;
   selectivity: number;
@@ -458,4 +467,45 @@ export interface ScriptingEngine {
   executeScript(scriptId: string, context: Record<string, any>): Promise<ScriptExecutionResult>;
   unloadScript(scriptId: string): Promise<void>;
   getScriptStats(scriptId: string): Promise<{ executions: number; avgTime: number; errors: number }>;
+}
+
+// Quantum Walk Algorithm Types
+export interface ComplexNumber {
+  real: number;
+  imag: number;
+}
+
+export interface QuantumState {
+  amplitudes: Map<string, ComplexNumber>;
+}
+
+export interface QuantumGraph {
+  nodes: string[];
+  edges: Map<string, string[]>;
+  weights?: Map<string, Map<string, number>>;
+}
+
+export interface QuantumPathResult {
+  path: string[];
+  probability: number;
+  steps: number;
+  convergence: number;
+}
+
+export interface QuantumWalkPathFinder {
+  findShortestPath(startNode: string, targetNode: string, maxSteps?: number): QuantumPathResult;
+  calculateQuantumCentrality(maxSteps?: number): Map<string, number>;
+  detectCommunities(maxSteps?: number): Map<string, number>;
+}
+
+export interface QuantumGraphEngine {
+  initialize(graph: QuantumGraph): void;
+  findShortestPath(startNode: string, targetNode: string, maxSteps?: number): QuantumPathResult | null;
+  calculateCentrality(maxSteps?: number): Map<string, number> | null;
+  detectCommunities(maxSteps?: number): Map<string, number> | null;
+  getStats(): {
+    initialized: boolean;
+    algorithm: string;
+    version: string;
+  };
 }

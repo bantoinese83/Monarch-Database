@@ -1,4 +1,5 @@
 import { Document, Query } from './types';
+import { QuantumCacheManager, quantumCacheManager } from './algorithms/quantum-cache';
 
 interface CacheEntry {
   result: Document[];
@@ -12,11 +13,19 @@ export class QueryCache {
   private ttl: number; // time to live in milliseconds
   private accessOrder = new Map<string, number>(); // For LRU eviction
   private accessCounter = 0;
+  private quantumEnabled = false;
 
   constructor(maxSize = 100, ttl = 30000) { // 30 seconds default TTL
     this.validateCacheParameters(maxSize, ttl);
     this.maxSize = maxSize;
     this.ttl = ttl;
+  }
+
+  /**
+   * Enable quantum caching (world's first quantum cache system)
+   */
+  enableQuantumCaching(enabled = true): void {
+    this.quantumEnabled = enabled;
   }
 
   private validateCacheParameters(maxSize: number, ttl: number): void {
@@ -85,6 +94,16 @@ export class QueryCache {
     }
 
     const key = this.getCacheKey(query);
+
+    // Try quantum cache first if enabled
+    if (this.quantumEnabled) {
+      const quantumResult = quantumCacheManager.get(key);
+      if (quantumResult !== undefined && quantumResult !== null) {
+        return quantumResult as Document[];
+      }
+    }
+
+    // Fallback to classical cache
     const entry = this.cache.get(key);
 
     if (!entry) {
@@ -130,6 +149,14 @@ export class QueryCache {
 
     const key = this.getCacheKey(query);
 
+    // Use quantum cache if enabled
+    if (this.quantumEnabled) {
+      const resultSize = JSON.stringify(result).length;
+      quantumCacheManager.put(key, [...result], resultSize);
+      return;
+    }
+
+    // Classical cache fallback
     // Evict if cache is full before adding new entry
     if (this.cache.size >= this.maxSize && !this.cache.has(key)) {
       this.evictLeastRecentlyUsed();

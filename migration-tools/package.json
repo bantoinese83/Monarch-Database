@@ -1,0 +1,33 @@
+{
+  "name": "monarch-migration-tools",
+  "version": "1.0.0",
+  "description": "Automated migration tools for Monarch Database",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "redis-migrate": "tsx redis-migration.ts",
+    "mongodb-migrate": "tsx mongodb-migration.ts",
+    "test": "echo \"Migration tools tested via integration tests\""
+  },
+  "dependencies": {
+    "redis": "^4.6.13",
+    "mongodb": "^6.7.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "tsx": "^4.0.0"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "keywords": [
+    "monarch",
+    "database",
+    "migration",
+    "redis",
+    "mongodb",
+    "data-migration"
+  ],
+  "author": "Monarch Database Team",
+  "license": "MIT"
+}
