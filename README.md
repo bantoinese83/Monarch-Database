@@ -238,11 +238,6 @@ npm run cli
 
 ### Official SDKs
 - **[TypeScript/JavaScript SDK](https://github.com/bantoinese83/Monarch-Database)** - Primary SDK with full feature support
-- **Python SDK** (Community Maintained) - *Coming Soon* 🚀
-  - Native Python integration with async/await support
-  - Full API compatibility with the core database
-  - Community-driven development and maintenance
-  - *Community Maintained = Developed and maintained by the community, officially recognized and supported*
 
 ### Community SDKs (Coming Soon)
 - **Go SDK** - *Coming Soon* 🐹
