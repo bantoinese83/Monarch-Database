@@ -907,8 +907,8 @@ export class Monarch {
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars, no-unused-vars, @typescript-eslint/no-explicit-any
-  async vsearch(key: string, queryVector: number[], topK?: number, _includeMetadata?: boolean): Promise<any[]> {
-    return this.dataOperationsManager.vsearch(key, queryVector, topK);
+  async vsearch(key: string, queryVector: number[], topK?: number, includeMetadata?: boolean): Promise<any[]> {
+    return this.dataOperationsManager.vsearch(key, queryVector, topK, includeMetadata);
   }
 
   async vdel(key: string, ids: string[]): Promise<number> {

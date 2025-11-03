@@ -382,8 +382,8 @@ export class DataOperationsManager {
     return this.dataStructures.vget(key, id);
   }
 
-  async vsearch(key: string, queryVector: number[], topK?: number): Promise<any[]> {
-    return this.dataStructures.vsearch(key, queryVector, topK);
+  async vsearch(key: string, queryVector: number[], topK?: number, includeMetadata?: boolean): Promise<any[]> {
+    return this.dataStructures.vsearch(key, queryVector, topK, includeMetadata);
   }
 
   async vdel(key: string, ids: string[]): Promise<number> {

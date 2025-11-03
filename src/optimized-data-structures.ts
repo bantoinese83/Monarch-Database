@@ -1385,7 +1385,7 @@ export class OptimizedDataStructures implements
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars, no-unused-vars
-  async vsearch(key: string, queryVector: number[], topK?: number, _includeMetadata?: boolean): Promise<VectorSearchResult[]> {
+  async vsearch(key: string, queryVector: number[], topK?: number, includeMetadata?: boolean): Promise<VectorSearchResult[]> {
     const vectors = this.vectors.get(key);
     if (!vectors) return [];
 
@@ -1394,7 +1394,7 @@ export class OptimizedDataStructures implements
     
     // Optimize: Use heap for top-k instead of full sort (O(n log k) vs O(n log n))
     if (vectorCount > k * 2) {
-      return this.topKVectorSearch(vectors, queryVector, k);
+      return this.topKVectorSearch(vectors, queryVector, k, includeMetadata);
     }
 
     // For small datasets, full sort is faster
@@ -1407,7 +1407,7 @@ export class OptimizedDataStructures implements
       results[index++] = {
         id,
         score,
-        metadata: entry.metadata
+        metadata: includeMetadata ? entry.metadata : undefined
       };
     }
 
@@ -1423,7 +1423,8 @@ export class OptimizedDataStructures implements
   private topKVectorSearch(
     vectors: Map<string, VectorEntry>,
     queryVector: number[],
-    k: number
+    k: number,
+    includeMetadata?: boolean
   ): VectorSearchResult[] {
     // Min-heap to keep top K results
     const heap: VectorSearchResult[] = [];
@@ -1469,7 +1470,7 @@ export class OptimizedDataStructures implements
       addToHeap({
         id,
         score,
-        metadata: entry.metadata
+        metadata: includeMetadata ? entry.metadata : undefined
       });
     }
 

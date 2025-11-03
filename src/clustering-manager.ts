@@ -169,21 +169,22 @@ export class ClusteringManagerImpl implements ClusteringManager {
       return { nodes: 1, shards: 0, health: 100 };
     }
 
-    const onlineNodes = this.config.nodes.filter(node =>
+    const onlineNodes = (this.config.nodes || []).filter(node =>
       this.checkNodeHealth(node)
     ).length;
 
     // Count active shards for stats (unused for now but may be needed in future)
     // eslint-disable-next-line @typescript-eslint/no-unused-vars, no-unused-vars
-    const _activeShards = this.config.shards.filter(shard =>
+    const _activeShards = (this.config.shards || []).filter(shard =>
       shard.status === 'active'
     ).length;
 
-    const health = Math.round((onlineNodes / this.config.nodes.length) * 100);
+    const totalNodes = this.config.nodes?.length || 1;
+    const health = Math.round((onlineNodes / totalNodes) * 100);
 
     return {
-      nodes: this.config.nodes.length,
-      shards: this.config.shards.length,
+      nodes: totalNodes,
+      shards: this.config.shards?.length || 0,
       health
     };
   }

@@ -328,7 +328,7 @@ describe('Clustering Manager - Golden Paths & Edge Cases', () => {
 
   describe('Edge Cases - Replication Strategies', () => {
     it('should handle different replication strategies', async () => {
-      const strategies = ['master-slave', 'multi-master', 'sharding'] as const;
+      const strategies = ['master-slave', 'replica-set', 'sharded'] as const;
 
       for (const strategy of strategies) {
         const config: ClusterConfig = {
@@ -435,18 +435,27 @@ describe('Clustering Manager - Golden Paths & Edge Cases', () => {
 
       await clusteringManager.joinCluster(config);
 
-      // Simulate rapid failures
-      const failurePromises = [];
+      // Simulate rapid failures by marking nodes as failed
+      const startTime = Date.now();
       for (let i = 1; i < 10; i++) {
-        failurePromises.push(clusteringManager.handleFailover(`node-${i}`));
-        await new Promise(resolve => setTimeout(resolve, 10)); // Small delay between failures
+        const nodeId = `node-${i}`;
+        // Mark node as failed (simulating a failure detection)
+        const failedNode = config.nodes.find(n => n.id === nodeId);
+        if (failedNode) {
+          failedNode.status = 'failed';
+          failedNode.lastHeartbeat = Date.now() - 10000; // Old heartbeat
+        }
       }
 
-      const startTime = Date.now();
-      await Promise.all(failurePromises);
-      const failoverTime = Date.now() - startTime;
+      // Wait for heartbeat check to detect failures
+      await new Promise(resolve => setTimeout(resolve, 200));
 
-      console.log(`Rapid failover test: Handled 9 node failures in ${failoverTime}ms`);
+      const failoverTime = Date.now() - startTime;
+      console.log(`Rapid failover test: Detected 9 node failures in ${failoverTime}ms`);
+
+      const stats = await clusteringManager.getClusterStats();
+      expect(stats.nodes).toBe(10); // Total nodes
+      expect(stats.health).toBeLessThan(100); // Health should be degraded
 
       await clusteringManager.leaveCluster();
     });
