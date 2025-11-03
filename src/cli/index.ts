@@ -8,8 +8,8 @@
 
 import { Monarch } from '../monarch';
 import { FileSystemAdapter } from '../adapters/filesystem';
-import { readFileSync, writeFileSync } from 'fs';
-import { join } from 'path';
+import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'fs';
+import { join, dirname } from 'path';
 
 /**
  * CLI command interface
@@ -52,15 +52,21 @@ registry.register({
   execute: async (args) => {
     const dbPath = args[0] || './monarch-data';
     try {
+      // Ensure directory exists
+      if (!existsSync(dbPath)) {
+        mkdirSync(dbPath, { recursive: true });
+      }
+
       const adapter = new FileSystemAdapter(dbPath);
-      const db = new Monarch({ persistence: adapter });
+      const db = new Monarch(adapter);
 
       // Create metadata file to mark initialization
       const metaFile = join(dbPath, '.monarch-meta.json');
       const metadata = {
         initialized: true,
         createdAt: new Date().toISOString(),
-        version: '1.0.0'
+        version: '1.0.0',
+        collections: []
       };
       writeFileSync(metaFile, JSON.stringify(metadata, null, 2));
 
@@ -71,7 +77,7 @@ registry.register({
       console.log('  Collections:', stats.collectionCount);
     } catch (error) {
       // eslint-disable-next-line no-console
-      console.error('❌ Failed to initialize database:', error.message);
+      console.error('❌ Failed to initialize database:', error instanceof Error ? error.message : String(error));
       process.exit(1);
     }
   }
@@ -85,8 +91,13 @@ registry.register({
   execute: async (args, options) => {
     const dbPath = (typeof options.path === 'string' ? options.path : undefined) || './monarch-data';
     try {
+      // Ensure directory exists
+      if (!existsSync(dbPath)) {
+        mkdirSync(dbPath, { recursive: true });
+      }
+
       const adapter = new FileSystemAdapter(dbPath);
-      const db = new Monarch({ persistence: adapter });
+      const db = new Monarch(adapter);
 
       if (!args[0]) {
         throw new Error('Collection name required. Usage: create <collection>');
@@ -119,7 +130,7 @@ registry.register({
       console.log(`✓ Collection '${collectionName}' created`);
     } catch (error) {
       // eslint-disable-next-line no-console
-      console.error('❌ Failed to create collection:', error.message);
+      console.error('❌ Failed to create collection:', error instanceof Error ? error.message : String(error));
       process.exit(1);
     }
   }
@@ -134,8 +145,13 @@ registry.register({
     const dbPath = (typeof options.path === 'string' ? options.path : undefined) || './monarch-data';
 
     try {
+      // Ensure directory exists
+      if (!existsSync(dbPath)) {
+        mkdirSync(dbPath, { recursive: true });
+      }
+
       const adapter = new FileSystemAdapter(dbPath);
-      const db = new Monarch({ persistence: adapter });
+      const db = new Monarch(adapter);
 
       const collectionName = args[0];
       const filePath = args[1];
@@ -160,7 +176,7 @@ registry.register({
       console.log(`✓ Inserted ${inserted?.length || 0} document(s) into '${collectionName}'`);
     } catch (error) {
       // eslint-disable-next-line no-console
-      console.error('❌ Failed to insert documents:', error.message);
+      console.error('❌ Failed to insert documents:', error instanceof Error ? error.message : String(error));
       process.exit(1);
     }
   }
