@@ -20,7 +20,7 @@ Monarch is a **high-performance, zero-dependency in-memory database** for JavaSc
 - 📊 **Real-Time Analytics**: Built-in monitoring and performance metrics
 - 🔄 **Change Streams**: Real-time data change notifications
 - 🌐 **Clustering**: Horizontal scaling with automatic failover
-- 📱 **Multi-Platform**: Node.js and Browser support
+- 📱 **Multi-Platform**: Node.js, Browser, and Python support
 
 ## 📊 Performance Benchmarks
 
@@ -229,6 +229,32 @@ npm run cli
 - [🏗️ Architecture](https://github.com/bantoinese83/Monarch-Database/blob/main/docs/PROJECT_STRUCTURE.md) - System architecture and design
 - [🚀 Performance Guide](https://github.com/bantoinese83/Monarch-Database/blob/main/docs/PERFORMANCE_OPTIMIZATIONS.md) - Optimization techniques and best practices
 - [🔧 API Reference](https://github.com/bantoinese83/Monarch-Database/blob/main/docs/API_REFERENCE.md) - Complete API documentation
+
+## 🌐 SDKs & Ecosystem
+
+### Official SDKs
+- **[TypeScript/JavaScript SDK](https://github.com/bantoinese83/Monarch-Database)** - Primary SDK with full feature support
+- **Python SDK** (Community Maintained) - *Coming Soon* 🚀
+  - Native Python integration
+  - Async/await support
+  - Full API compatibility
+  - Community-driven development
+
+### Community Libraries
+- **Go SDK** - In development
+- **Rust SDK** - Planned for Q1 2026
+- **Java SDK** - Community interest expressed
+
+### Integration Libraries
+- **LangChain Integration** - For AI/ML workflows
+- **Vector Database Connectors** - Pinecone, Weaviate, Qdrant
+- **ORM Integrations** - Prisma, TypeORM, SQLAlchemy
+
+### Tools & Utilities
+- **Monarch CLI** - Database management and monitoring
+- **Docker Images** - Pre-built containers for all platforms
+- **Kubernetes Operator** - Automated cluster management
+- **Grafana Dashboards** - Pre-configured monitoring templates
 
 ## 🤝 Contributing
 
