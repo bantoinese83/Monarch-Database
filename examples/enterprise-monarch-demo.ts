@@ -18,7 +18,7 @@
  * ✅ Performance: Advanced caching and optimization
  */
 
-import { Monarch } from '../src/monarch';
+import { Monarch } from 'monarch-db';
 
 class EnterpriseMonarchDemo {
   private db: Monarch;

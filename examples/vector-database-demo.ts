@@ -12,7 +12,7 @@
  * - Performance optimized for AI/ML applications
  */
 
-import { Monarch } from '../src/monarch';
+import { Monarch } from 'monarch-db';
 
 interface Document {
   id: string;

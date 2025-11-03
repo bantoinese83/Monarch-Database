@@ -5,7 +5,7 @@
  * for social network analysis, recommendation systems, and connected data analytics.
  */
 
-import { Monarch } from '../src/monarch';
+import { Monarch } from 'monarch-db';
 
 interface User {
   id: string;

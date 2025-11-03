@@ -1,6 +1,6 @@
 #!/usr/bin/env tsx
 
-import { Monarch } from './src';
+import { Monarch } from 'monarch-db';
 
 // Example usage of Monarch Database
 async function main() {
@@ -76,8 +76,16 @@ async function main() {
   console.log('\n📊 Database Statistics:');
   console.log(`Collections: ${dbStats.collectionCount}`);
   console.log(`Total Documents: ${dbStats.totalDocuments}`);
-  console.log(`Users Collection: ${userStats.documentCount} documents, ${userStats.indexCount} index`);
-  console.log(`Products Collection: ${productStats.documentCount} documents, ${productStats.indexCount} index`);
+  console.log(`Users Collection: ${userStats.documentCount} documents, ${userStats.indexCount} indexes`);
+  console.log(`Products Collection: ${productStats.documentCount} documents, ${productStats.indexCount} indexes`);
+
+  // Health check (new feature)
+  console.log('\n🏥 Health Check:');
+  const health = await db.healthCheck();
+  console.log(`Status: ${health.status}`);
+  console.log(`Uptime: ${health.uptime}ms`);
+  console.log(`Collections: ${health.collections}`);
+  console.log(`Memory Usage: ${(health.memoryUsage / 1024 / 1024).toFixed(2)} MB`);
 
   console.log('\n🎉 Example completed successfully!');
 }

@@ -5,7 +5,7 @@
  * popular enterprise frameworks and tools.
  */
 
-import { Monarch } from '../src/monarch';
+import { Monarch } from 'monarch-db';
 
 // Example 1: Express.js Integration
 function createExpressIntegration() {

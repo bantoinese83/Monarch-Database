@@ -5,7 +5,7 @@
  * enabling RAG (Retrieval-Augmented Generation) applications.
  */
 
-import { Monarch } from '../src/monarch';
+import { Monarch } from 'monarch-db';
 
 // Mock LangChain-like interfaces (in real usage, import from 'langchain')
 interface Document {
