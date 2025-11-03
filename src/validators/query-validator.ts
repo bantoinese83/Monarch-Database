@@ -1,6 +1,6 @@
 /**
  * Query Validator
- * 
+ *
  * Centralized validation logic for queries.
  * Follows DRY principle - single source of truth for query validation.
  */
@@ -16,11 +16,7 @@ export class QueryValidator {
    */
   static validate(query: Query): void {
     if (query === null || typeof query !== 'object') {
-      throw new ValidationError(
-        ERROR_MESSAGES.QUERY_MUST_BE_OBJECT,
-        'query',
-        query
-      );
+      throw new ValidationError(ERROR_MESSAGES.QUERY_MUST_BE_OBJECT, 'query', query);
     }
 
     this.validateDepth(query);
@@ -123,20 +119,12 @@ export class QueryValidator {
    */
   static validateUpdateOperation(changes: Record<string, unknown>): void {
     if (Object.keys(changes).length === 0) {
-      throw new ValidationError(
-        ERROR_MESSAGES.UPDATE_MUST_SPECIFY_FIELD,
-        'updateChanges',
-        changes
-      );
+      throw new ValidationError(ERROR_MESSAGES.UPDATE_MUST_SPECIFY_FIELD, 'updateChanges', changes);
     }
 
     // Check for dangerous operations
     if ('_id' in changes) {
-      throw new ValidationError(
-        ERROR_MESSAGES.UPDATE_ID_FORBIDDEN,
-        'updateChanges',
-        '_id'
-      );
+      throw new ValidationError(ERROR_MESSAGES.UPDATE_ID_FORBIDDEN, 'updateChanges', '_id');
     }
 
     // Check for nested updates (not supported yet)
@@ -155,4 +143,3 @@ export class QueryValidator {
     }
   }
 }
-

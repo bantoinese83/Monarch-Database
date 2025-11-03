@@ -1,6 +1,6 @@
 /**
  * Document Validator
- * 
+ *
  * Centralized validation logic for documents.
  * Follows DRY principle - single source of truth for document validation.
  */
@@ -15,20 +15,17 @@ export class DocumentValidator {
    * @throws ValidationError or DataIntegrityError if document is invalid
    */
   static validate(doc: Document): void {
-    if (!doc || typeof doc !== 'object') {
-      throw new ValidationError(
-        ERROR_MESSAGES.DOCUMENT_MUST_BE_OBJECT,
-        'document',
-        doc
-      );
+    if (!doc || typeof doc !== 'object' || Array.isArray(doc)) {
+      throw new ValidationError(ERROR_MESSAGES.DOCUMENT_MUST_BE_OBJECT, 'document', doc);
     }
 
     // Check document size
     const docSize = this.calculateSize(doc);
     if (docSize > LIMITS.MAX_DOCUMENT_SIZE) {
-      throw new ValidationError(
+      throw new ResourceLimitError(
         ERROR_MESSAGES.DOCUMENT_TOO_LARGE(docSize, LIMITS.MAX_DOCUMENT_SIZE),
         'documentSize',
+        LIMITS.MAX_DOCUMENT_SIZE,
         docSize
       );
     }
@@ -50,27 +47,19 @@ export class DocumentValidator {
     try {
       return JSON.stringify(obj).length * 2; // Rough estimate in bytes
     } catch {
-      throw new DataIntegrityError(
-        ERROR_MESSAGES.DOCUMENT_NON_SERIALIZABLE,
-        undefined,
-        undefined
-      );
+      throw new DataIntegrityError(ERROR_MESSAGES.DOCUMENT_NON_SERIALIZABLE, undefined, undefined);
     }
   }
 
   /**
    * Detect circular references in an object
-   * @throws DataIntegrityError if circular reference found
+   * @throws ValidationError if circular reference found
    */
   static detectCircularReferences(obj: unknown, seen = new WeakSet<object>()): void {
     if (obj === null || typeof obj !== 'object') return;
 
     if (seen.has(obj)) {
-      throw new DataIntegrityError(
-        ERROR_MESSAGES.DOCUMENT_CIRCULAR_REF,
-        undefined,
-        undefined
-      );
+      throw new ValidationError(ERROR_MESSAGES.DOCUMENT_CIRCULAR_REF, 'document', obj);
     }
 
     seen.add(obj);
@@ -91,11 +80,7 @@ export class DocumentValidator {
 
     for (const [key, value] of Object.entries(obj)) {
       if (typeof key !== 'string') {
-        throw new ValidationError(
-          ERROR_MESSAGES.FIELD_NAME_MUST_BE_STRING,
-          'fieldName',
-          key
-        );
+        throw new ValidationError(ERROR_MESSAGES.FIELD_NAME_MUST_BE_STRING, 'fieldName', key);
       }
 
       if (key.length > LIMITS.MAX_FIELD_NAME_LENGTH) {
@@ -108,11 +93,7 @@ export class DocumentValidator {
 
       // Check for dangerous field names
       if (key.startsWith('$') && path.length === 0) {
-        throw new ValidationError(
-          ERROR_MESSAGES.FIELD_NAME_DANGEROUS(key),
-          'fieldName',
-          key
-        );
+        throw new ValidationError(ERROR_MESSAGES.FIELD_NAME_DANGEROUS(key), 'fieldName', key);
       }
 
       // Recursively validate nested objects
@@ -127,29 +108,16 @@ export class DocumentValidator {
    */
   static validateId(id: string): void {
     if (!id || typeof id !== 'string') {
-      throw new ValidationError(
-        ERROR_MESSAGES.DOCUMENT_ID_INVALID(id),
-        'documentId',
-        id
-      );
+      throw new ValidationError(ERROR_MESSAGES.DOCUMENT_ID_INVALID(id), 'documentId', id);
     }
 
     if (id.length < 1 || id.length > 100) {
-      throw new ValidationError(
-        ERROR_MESSAGES.DOCUMENT_ID_INVALID(id),
-        'documentId',
-        id
-      );
+      throw new ValidationError(ERROR_MESSAGES.DOCUMENT_ID_INVALID(id), 'documentId', id);
     }
 
     // Allow alphanumeric characters, underscores, hyphens, and dots
     if (!/^[a-zA-Z0-9_.-]+$/.test(id)) {
-      throw new ValidationError(
-        ERROR_MESSAGES.DOCUMENT_ID_INVALID(id),
-        'documentId',
-        id
-      );
+      throw new ValidationError(ERROR_MESSAGES.DOCUMENT_ID_INVALID(id), 'documentId', id);
     }
   }
 }
-

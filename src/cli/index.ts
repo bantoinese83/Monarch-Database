@@ -78,7 +78,7 @@ registry.register({
   description: 'Initialize a new Monarch database',
   usage: 'init [path]',
   examples: ['init', 'init ./my-database'],
-  execute: async (args) => {
+  execute: async args => {
     const dbPath = args[0] || './monarch-data';
     try {
       // Ensure directory exists
@@ -92,7 +92,7 @@ registry.register({
         initialized: true,
         createdAt: new Date().toISOString(),
         version: '1.0.0',
-        collections: []
+        collections: [],
       };
       writeFileSync(metaFile, JSON.stringify(metadata, null, 2));
 
@@ -105,10 +105,13 @@ registry.register({
       console.log('  Collections:', stats.collectionCount);
     } catch (error) {
       // eslint-disable-next-line no-console
-      console.error('❌ Failed to initialize database:', error instanceof Error ? error.message : String(error));
+      console.error(
+        '❌ Failed to initialize database:',
+        error instanceof Error ? error.message : String(error)
+      );
       process.exit(1);
     }
-  }
+  },
 });
 
 registry.register({
@@ -117,7 +120,8 @@ registry.register({
   usage: 'create <collection> [--path <path>]',
   examples: ['create users', 'create products --path ./my-db'],
   execute: async (args, options) => {
-    const dbPath = (typeof options.path === 'string' ? options.path : undefined) || './monarch-data';
+    const dbPath =
+      (typeof options.path === 'string' ? options.path : undefined) || './monarch-data';
     try {
       // Ensure directory exists
       if (!existsSync(dbPath)) {
@@ -149,7 +153,7 @@ registry.register({
           initialized: true,
           createdAt: new Date().toISOString(),
           version: '1.0.0',
-          collections: [collectionName]
+          collections: [collectionName],
         };
         writeFileSync(metaFile, JSON.stringify(metadata, null, 2));
       }
@@ -158,10 +162,13 @@ registry.register({
       console.log(`✓ Collection '${collectionName}' created`);
     } catch (error) {
       // eslint-disable-next-line no-console
-      console.error('❌ Failed to create collection:', error instanceof Error ? error.message : String(error));
+      console.error(
+        '❌ Failed to create collection:',
+        error instanceof Error ? error.message : String(error)
+      );
       process.exit(1);
     }
-  }
+  },
 });
 
 registry.register({
@@ -170,7 +177,8 @@ registry.register({
   usage: 'insert <collection> <file> --path <path>',
   examples: ['insert users data.json --path ./my-db', 'insert products batch.json --path ./data'],
   execute: async (args, options) => {
-    const dbPath = (typeof options.path === 'string' ? options.path : undefined) || './monarch-data';
+    const dbPath =
+      (typeof options.path === 'string' ? options.path : undefined) || './monarch-data';
 
     try {
       // Ensure directory exists
@@ -193,7 +201,9 @@ registry.register({
 
       const collection = db.getCollection(collectionName);
       if (!collection) {
-        throw new Error(`Collection '${collectionName}' does not exist. Create it first with: create ${collectionName}`);
+        throw new Error(
+          `Collection '${collectionName}' does not exist. Create it first with: create ${collectionName}`
+        );
       }
 
       const data = JSON.parse(readFileSync(filePath, 'utf-8'));
@@ -204,50 +214,55 @@ registry.register({
       console.log(`✓ Inserted ${inserted?.length || 0} document(s) into '${collectionName}'`);
     } catch (error) {
       // eslint-disable-next-line no-console
-      console.error('❌ Failed to insert documents:', error instanceof Error ? error.message : String(error));
+      console.error(
+        '❌ Failed to insert documents:',
+        error instanceof Error ? error.message : String(error)
+      );
       process.exit(1);
     }
-  }
+  },
 });
 
 registry.register({
   name: 'query',
   description: 'Query a collection',
   execute: async (args, options) => {
-    const dbPath = (typeof options.path === 'string' ? options.path : undefined) || './monarch-data';
+    const dbPath =
+      (typeof options.path === 'string' ? options.path : undefined) || './monarch-data';
     const adapter = new FileSystemAdapter(dbPath);
     const db = new Monarch(adapter);
-    
+
     const collectionName = args[0];
     const queryStr = args[1] || '{}';
-    
+
     if (!collectionName) {
       throw new Error('Collection name required');
     }
-    
+
     const collection = db.getCollection(collectionName);
     if (!collection) {
       throw new Error(`Collection '${collectionName}' not found`);
     }
-    
+
     const query = JSON.parse(queryStr);
     const results = collection.find(query);
-    
+
     // eslint-disable-next-line no-console
     console.log(`Found ${results.length} document(s):`);
     // eslint-disable-next-line no-console
     console.log(JSON.stringify(results, null, 2));
-  }
+  },
 });
 
 registry.register({
   name: 'stats',
   description: 'Show database statistics',
   execute: async (args, options) => {
-    const dbPath = (typeof options.path === 'string' ? options.path : undefined) || './monarch-data';
+    const dbPath =
+      (typeof options.path === 'string' ? options.path : undefined) || './monarch-data';
     const adapter = new FileSystemAdapter(dbPath);
     const db = new Monarch(adapter);
-    
+
     const stats = db.getStats();
     // eslint-disable-next-line no-console
     console.log('Database Statistics:');
@@ -256,7 +271,7 @@ registry.register({
     // eslint-disable-next-line no-console
     console.log(`  Total Documents: ${stats.totalDocuments}`);
     // Note: totalSize not available in current API
-  }
+  },
 });
 
 registry.register({
@@ -267,12 +282,12 @@ registry.register({
     console.log('Monarch Database CLI\n');
     // eslint-disable-next-line no-console
     console.log('Available commands:\n');
-    
+
     for (const command of registry.list()) {
       // eslint-disable-next-line no-console
       console.log(`  ${command.name.padEnd(15)} ${command.description}`);
     }
-    
+
     // eslint-disable-next-line no-console
     console.log('\nUsage: monarch <command> [args] [options]');
     // eslint-disable-next-line no-console
@@ -281,7 +296,7 @@ registry.register({
     console.log('  --path <path>    Database path (default: ./monarch-data)');
     // eslint-disable-next-line no-console
     console.log('  --help           Show help');
-  }
+  },
 });
 
 // Register commands
@@ -290,7 +305,7 @@ registry.register({
   description: 'Initialize a new Monarch database',
   usage: 'init [path]',
   examples: ['init', 'init ./my-database'],
-  execute: async (args) => {
+  execute: async args => {
     const dbPath = args[0] || './monarch-data';
     try {
       // Ensure directory exists
@@ -304,7 +319,7 @@ registry.register({
         initialized: true,
         createdAt: new Date().toISOString(),
         version: '1.0.0',
-        collections: []
+        collections: [],
       };
       writeFileSync(metaFile, JSON.stringify(metadata, null, 2));
 
@@ -318,10 +333,13 @@ registry.register({
       console.log('  Collections:', stats.collectionCount);
     } catch (error) {
       // eslint-disable-next-line no-console
-      console.error('❌ Failed to initialize database:', error instanceof Error ? error.message : String(error));
+      console.error(
+        '❌ Failed to initialize database:',
+        error instanceof Error ? error.message : String(error)
+      );
       process.exit(1);
     }
-  }
+  },
 });
 
 registry.register({
@@ -330,7 +348,8 @@ registry.register({
   usage: 'create <collection> [--path <path>]',
   examples: ['create users --path ./my-db', 'create products ./my-db'],
   execute: async (args, options) => {
-    const dbPath = (typeof options.path === 'string' ? options.path : undefined) || args[1] || './monarch-data';
+    const dbPath =
+      (typeof options.path === 'string' ? options.path : undefined) || args[1] || './monarch-data';
     try {
       // Ensure directory exists
       if (!existsSync(dbPath)) {
@@ -364,7 +383,7 @@ registry.register({
           initialized: true,
           createdAt: new Date().toISOString(),
           version: '1.0.0',
-          collections: [collectionName]
+          collections: [collectionName],
         };
         writeFileSync(metaFile, JSON.stringify(metadata, null, 2));
       }
@@ -373,10 +392,13 @@ registry.register({
       console.log(`✓ Collection '${collectionName}' created`);
     } catch (error) {
       // eslint-disable-next-line no-console
-      console.error('❌ Failed to create collection:', error instanceof Error ? error.message : String(error));
+      console.error(
+        '❌ Failed to create collection:',
+        error instanceof Error ? error.message : String(error)
+      );
       process.exit(1);
     }
-  }
+  },
 });
 
 registry.register({
@@ -385,7 +407,8 @@ registry.register({
   usage: 'insert <collection> <file> --path <path>',
   examples: ['insert users data.json --path ./my-db', 'insert products batch.json --path ./data'],
   execute: async (args, options) => {
-    const dbPath = (typeof options.path === 'string' ? options.path : undefined) || args[2] || './monarch-data';
+    const dbPath =
+      (typeof options.path === 'string' ? options.path : undefined) || args[2] || './monarch-data';
 
     try {
       // Ensure directory exists
@@ -397,9 +420,9 @@ registry.register({
       const db = new Monarch(adapter);
       // Load existing collections from metadata
       try {
-        const metaFile = join(dbPath, ".monarch-meta.json");
+        const metaFile = join(dbPath, '.monarch-meta.json');
         if (existsSync(metaFile)) {
-          const metadata = JSON.parse(readFileSync(metaFile, "utf-8"));
+          const metadata = JSON.parse(readFileSync(metaFile, 'utf-8'));
           if (metadata.collections) {
             metadata.collections.forEach((name: string) => {
               if (!db.getCollection(name)) {
@@ -427,41 +450,44 @@ registry.register({
 
       const collection = db.getCollection(collectionName);
       if (!collection) {
-        throw new Error(`Collection '${collectionName}' does not exist. Create it first with: create ${collectionName}`);
+        throw new Error(
+          `Collection '${collectionName}' does not exist. Create it first with: create ${collectionName}`
+        );
       }
 
       const data = JSON.parse(readFileSync(filePath, 'utf-8'));
       const docs = Array.isArray(data) ? data : [data];
       const inserted = collection.insert(docs);
       // Save the database
-      // Save the database
-      const serializedData = db.serialize();
-      try {
-        await db.save();
-      } catch (saveError) {
-        throw saveError;
-      }
+      await db.save();
       // eslint-disable-next-line no-console
       console.log(`✓ Inserted ${inserted?.length || 0} document(s) into '${collectionName}'`);
     } catch (error) {
       // eslint-disable-next-line no-console
-      console.error('❌ Failed to insert documents:', error instanceof Error ? error.message : String(error));
+      console.error(
+        '❌ Failed to insert documents:',
+        error instanceof Error ? error.message : String(error)
+      );
       process.exit(1);
     }
-  }
+  },
 });
 
 registry.register({
   name: 'query',
   description: 'Query a collection with advanced filtering',
-  usage: 'query <collection> [--path <path>] [query] [--limit <n>] [--sort <field>] [--fields <fields>]',
+  usage:
+    'query <collection> [--path <path>] [query] [--limit <n>] [--sort <field>] [--fields <fields>]',
   examples: [
     'query users --path ./my-db',
     'query users ./my-db \'{"age": {"$gte": 25}}\'',
-    'query products ./my-db \'{"category": "electronics"}\' --sort price --limit 10'
+    'query products ./my-db \'{"category": "electronics"}\' --sort price --limit 10',
   ],
   execute: async (args, options) => {
-    const dbPath = (typeof options.path === 'string' ? options.path : undefined) || (args[1] && (args[1].startsWith('./') || args[1].startsWith('/')) ? args[1] : undefined) || './monarch-data';
+    const dbPath =
+      (typeof options.path === 'string' ? options.path : undefined) ||
+      (args[1] && (args[1].startsWith('./') || args[1].startsWith('/')) ? args[1] : undefined) ||
+      './monarch-data';
 
     try {
       // Ensure directory exists
@@ -493,7 +519,6 @@ registry.register({
       await db.load();
 
       const collectionName = args[0];
-      let queryArgIndex = 1;
 
       // If path option is provided, query is args[1], otherwise check args[1] and args[2]
       let queryStr;
@@ -505,12 +530,13 @@ registry.register({
           queryStr = args[1];
         } else if (args[2]) {
           queryStr = args[2];
-          queryArgIndex = 2;
         }
       }
 
       if (!collectionName) {
-        throw new Error('Collection name required. Usage: query <collection> [--path <path>] [query]');
+        throw new Error(
+          'Collection name required. Usage: query <collection> [--path <path>] [query]'
+        );
       }
 
       const collection = db.getCollection(collectionName);
@@ -572,10 +598,13 @@ registry.register({
       }
     } catch (error) {
       // eslint-disable-next-line no-console
-      console.error('❌ Failed to query collection:', error instanceof Error ? error.message : String(error));
+      console.error(
+        '❌ Failed to query collection:',
+        error instanceof Error ? error.message : String(error)
+      );
       process.exit(1);
     }
-  }
+  },
 });
 
 registry.register({
@@ -584,7 +613,8 @@ registry.register({
   usage: 'stats [--path <path>] [--detailed]',
   examples: ['stats --path ./my-db', 'stats ./my-db --detailed'],
   execute: async (args, options) => {
-    const dbPath = (typeof options.path === 'string' ? options.path : undefined) || args[0] || './monarch-data';
+    const dbPath =
+      (typeof options.path === 'string' ? options.path : undefined) || args[0] || './monarch-data';
 
     try {
       // Ensure directory exists
@@ -652,10 +682,13 @@ registry.register({
       }
     } catch (error) {
       // eslint-disable-next-line no-console
-      console.error('❌ Failed to get database statistics:', error instanceof Error ? error.message : String(error));
+      console.error(
+        '❌ Failed to get database statistics:',
+        error instanceof Error ? error.message : String(error)
+      );
       process.exit(1);
     }
-  }
+  },
 });
 
 registry.register({
@@ -664,7 +697,8 @@ registry.register({
   usage: 'collections [--path <path>]',
   examples: ['collections --path ./my-db', 'collections ./my-db'],
   execute: async (args, options) => {
-    const dbPath = (typeof options.path === 'string' ? options.path : undefined) || args[0] || './monarch-data';
+    const dbPath =
+      (typeof options.path === 'string' ? options.path : undefined) || args[0] || './monarch-data';
 
     try {
       // Ensure directory exists
@@ -717,22 +751,32 @@ registry.register({
       }
     } catch (error) {
       // eslint-disable-next-line no-console
-      console.error('❌ Failed to list collections:', error instanceof Error ? error.message : String(error));
+      console.error(
+        '❌ Failed to list collections:',
+        error instanceof Error ? error.message : String(error)
+      );
       process.exit(1);
     }
-  }
+  },
 });
 
 registry.register({
   name: 'batch-insert',
   description: 'Insert multiple documents from multiple files',
   usage: 'batch-insert <collection> <file1> [file2...] [--path <path>]',
-  examples: ['batch-insert users users1.json users2.json --path ./my-db', 'batch-insert products users1.json users2.json ./my-db'],
+  examples: [
+    'batch-insert users users1.json users2.json --path ./my-db',
+    'batch-insert products users1.json users2.json ./my-db',
+  ],
   execute: async (args, options) => {
     const collectionName = args[0];
-    const dbPath = (typeof options.path === 'string' ? options.path : undefined) || args[args.length - 1] || './monarch-data';
-    const files = (typeof options.path === 'string' ? options.path : undefined) ?
-      args.slice(1) : args.slice(1, -1);
+    const dbPath =
+      (typeof options.path === 'string' ? options.path : undefined) ||
+      args[args.length - 1] ||
+      './monarch-data';
+    const files = (typeof options.path === 'string' ? options.path : undefined)
+      ? args.slice(1)
+      : args.slice(1, -1);
 
     try {
       // Ensure directory exists
@@ -772,7 +816,9 @@ registry.register({
 
       const collection = db.getCollection(collectionName);
       if (!collection) {
-        throw new Error(`Collection '${collectionName}' does not exist. Create it first with: create ${collectionName}`);
+        throw new Error(
+          `Collection '${collectionName}' does not exist. Create it first with: create ${collectionName}`
+        );
       }
 
       let totalInserted = 0;
@@ -786,7 +832,9 @@ registry.register({
           console.log(`✓ ${filePath}: ${inserted?.length || 0} documents`);
         } catch (error) {
           // eslint-disable-next-line no-console
-          console.error(`❌ ${filePath}: Failed to process - ${error instanceof Error ? error.message : String(error)}`);
+          console.error(
+            `❌ ${filePath}: Failed to process - ${error instanceof Error ? error.message : String(error)}`
+          );
         }
       }
 
@@ -794,13 +842,18 @@ registry.register({
       await db.save();
 
       // eslint-disable-next-line no-console
-      console.log(`\n✅ Batch insert complete: ${totalInserted} total documents inserted into '${collectionName}'`);
+      console.log(
+        `\n✅ Batch insert complete: ${totalInserted} total documents inserted into '${collectionName}'`
+      );
     } catch (error) {
       // eslint-disable-next-line no-console
-      console.error('❌ Failed to perform batch insert:', error instanceof Error ? error.message : String(error));
+      console.error(
+        '❌ Failed to perform batch insert:',
+        error instanceof Error ? error.message : String(error)
+      );
       process.exit(1);
     }
-  }
+  },
 });
 
 registry.register({
@@ -870,7 +923,7 @@ registry.register({
       // eslint-disable-next-line no-console
       console.log('For help on a specific command: monarch help <command>');
     }
-  }
+  },
 });
 
 /**
@@ -919,4 +972,3 @@ if (require.main === module) {
 }
 
 export { CLIRegistry, registry };
-

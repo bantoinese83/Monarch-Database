@@ -1,6 +1,6 @@
 /**
  * Collection Validator
- * 
+ *
  * Centralized validation logic for collection names and operations.
  * Follows DRY principle - single source of truth for collection validation.
  */
@@ -15,11 +15,7 @@ export class CollectionValidator {
    */
   static validateName(name: string): void {
     if (!name || typeof name !== 'string') {
-      throw new ValidationError(
-        ERROR_MESSAGES.COLLECTION_NAME_REQUIRED,
-        'collectionName',
-        name
-      );
+      throw new ValidationError(ERROR_MESSAGES.COLLECTION_NAME_REQUIRED, 'collectionName', name);
     }
 
     if (name.length > LIMITS.MAX_COLLECTION_NAME_LENGTH) {
@@ -52,4 +48,3 @@ export class CollectionValidator {
     }
   }
 }
-
