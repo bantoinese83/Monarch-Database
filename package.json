@@ -1,6 +1,6 @@
 {
   "name": "monarch-database-quantum",
-  "version": "1.4.2",
+  "version": "1.4.4",
   "description": "🚀 High-performance, zero-dependency in-memory database for JavaScript/TypeScript - Drop-in replacement for Redis + MongoDB",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
@@ -45,7 +45,10 @@
     "cli": "tsx src/cli/index.ts",
     "cli:build": "npm run build && npm run cli",
     "migrate:redis": "tsx migration-tools/redis-migration.ts",
-    "migrate:mongodb": "tsx migration-tools/mongodb-migration.ts"
+    "migrate:mongodb": "tsx migration-tools/mongodb-migration.ts",
+    "knip": "knip",
+    "audit:dead-code": "knip",
+    "audit:all": "npm run lint && npm run type-check && npm run test && knip"
   },
   "keywords": [
     "database",
@@ -97,6 +100,7 @@
     "@vitest/coverage-v8": "^1.0.0",
     "eslint": "^8.0.0",
     "husky": "^9.1.7",
+    "knip": "^5.67.1",
     "lint-staged": "^16.2.6",
     "prettier": "^3.0.0",
     "tsx": "^4.20.6",

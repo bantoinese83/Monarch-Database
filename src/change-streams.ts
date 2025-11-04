@@ -334,10 +334,10 @@ export class ChangeStreamsManager {
       switch (operator) {
         case '$eq': if (value !== operand) return false; break;
         case '$ne': if (value === operand) return false; break;
-        case '$gt': if (!(value > operand)) return false; break;
-        case '$gte': if (!(value >= operand)) return false; break;
-        case '$lt': if (!(value < operand)) return false; break;
-        case '$lte': if (!(value <= operand)) return false; break;
+        case '$gt': if (!(value > (operand as number))) return false; break;
+        case '$gte': if (!(value >= (operand as number))) return false; break;
+        case '$lt': if (!(value < (operand as number))) return false; break;
+        case '$lte': if (!(value <= (operand as number))) return false; break;
         case '$in': if (!Array.isArray(operand) || !operand.includes(value)) return false; break;
         case '$nin': if (!Array.isArray(operand) || operand.includes(value)) return false; break;
         case '$regex': if (!(operand instanceof RegExp) || !operand.test(String(value))) return false; break;

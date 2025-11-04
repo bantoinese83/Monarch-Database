@@ -26,7 +26,7 @@ export class QuantumAPI {
   async findPath(graph: any, startNode: string, endNode: string, options: PathFindingOptions = {}): Promise<any> {
     try {
       // Initialize graph if needed
-      this.quantumWalk.initializeGraph(graph.nodes, graph.edges);
+      this.quantumWalk.initialize(graph);
       const result = this.quantumWalk.findShortestPath(startNode, endNode, options.maxDepth || 100);
       logger.info('Quantum path finding completed', { startNode, endNode });
       return result;
@@ -42,8 +42,8 @@ export class QuantumAPI {
    */
   async calculateCentrality(graph: any, options: CentralityOptions = {}): Promise<any> {
     try {
-      this.quantumWalk.initializeGraph(graph.nodes, graph.edges);
-      const result = this.quantumWalk.calculateQuantumCentrality(options.iterations || 50);
+      this.quantumWalk.initialize(graph);
+      const result = this.quantumWalk.calculateCentrality(options.iterations || 50);
       logger.info('Quantum centrality analysis completed');
       return result;
     } catch (error) {
@@ -58,7 +58,7 @@ export class QuantumAPI {
    */
   async detectCommunities(graph: any, options: CommunityDetectionOptions = {}): Promise<any> {
     try {
-      this.quantumWalk.initializeGraph(graph.nodes, graph.edges);
+      this.quantumWalk.initialize(graph);
       const result = this.quantumWalk.detectCommunities(options.maxIterations || 30);
       logger.info('Quantum community detection completed');
       return result;
@@ -74,7 +74,7 @@ export class QuantumAPI {
    */
   async optimizeQuery(query: any, collection: Document[], options: QueryOptimizationOptions = {}): Promise<any> {
     try {
-      const result = this.quantumOptimizer.optimizeQuery(query, collection);
+      const result = this.quantumOptimizer.optimizeQuery(query);
       logger.info('Quantum query optimization completed');
       return result;
     } catch (error) {
@@ -89,7 +89,7 @@ export class QuantumAPI {
    */
   async cacheResult(key: string, value: any, options: CacheOptions = {}): Promise<void> {
     try {
-      this.quantumCache.set(key, value);
+      this.quantumCache.put(key, value);
       logger.debug('Quantum cache set', { key });
     } catch (error) {
       logger.error('Quantum cache set failed', { error: (error as Error).message });
@@ -114,12 +114,15 @@ export class QuantumAPI {
    */
   analyzeQuantumState(graph: QuantumGraph): QuantumStateAnalysis {
     try {
-      const analysis = this.quantumWalk.analyzeQuantumState(graph);
-      logger.info('Quantum state analysis completed', {
-        coherence: analysis.coherence,
-        entanglement: analysis.entanglement
-      });
-      return analysis;
+      logger.info('Quantum state analysis not available');
+      return {
+        coherence: 0,
+        entanglement: 0,
+        superposition: 0,
+        interference: 0,
+        timestamp: Date.now(),
+        message: 'Quantum state analysis not implemented'
+      };
     } catch (error) {
       logger.error('Quantum state analysis failed', { error: (error as Error).message });
       throw error;
@@ -139,9 +142,9 @@ export class QuantumAPI {
    */
   getStats(): QuantumStats {
     return {
-      walk: this.quantumWalk.getStats ? this.quantumWalk.getStats() : {},
+      walk: {},
       cache: this.quantumCache.getStats(),
-      optimizer: this.quantumOptimizer.getStats ? this.quantumOptimizer.getStats() : {},
+      optimizer: {},
       timestamp: Date.now()
     };
   }
@@ -150,7 +153,6 @@ export class QuantumAPI {
    * Reset Quantum States
    */
   reset(): void {
-    this.quantumWalk.reset();
     this.quantumCache.clear();
     logger.info('Quantum API reset');
   }
@@ -261,6 +263,7 @@ export interface QuantumStateAnalysis {
   superposition: number;
   interference: number;
   timestamp: number;
+  message?: string;
 }
 
 export interface QuantumStats {

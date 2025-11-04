@@ -26,6 +26,22 @@ export class AIMLIntegration implements MLIntegration {
       throw new Error(`Invalid model format '${model.format}'. Supported formats: ${validFormats.join(', ')}`);
     }
 
+    // Validate model task
+    const validTasks: MLTask[] = ['classification', 'regression', 'clustering', 'dimensionality-reduction', 'anomaly-detection'];
+    if (!validTasks.includes(model.task)) {
+      throw new Error(`Invalid model task '${model.task}'. Supported tasks: ${validTasks.join(', ')}`);
+    }
+
+    // Validate input and output shapes (non-ensemble models must have valid shapes)
+    if (model.format !== 'ensemble') {
+      if (!model.inputShape || model.inputShape.length === 0) {
+        throw new Error('Model inputShape cannot be empty');
+      }
+      if (!model.outputShape || model.outputShape.length === 0) {
+        throw new Error('Model outputShape cannot be empty');
+      }
+    }
+
     // Check model size limit (500MB max)
     const MAX_MODEL_SIZE = 500 * 1024 * 1024;
     if (modelData.length > MAX_MODEL_SIZE) {
@@ -147,23 +163,24 @@ export class AIMLIntegration implements MLIntegration {
       throw new Error('Input cannot be empty');
     }
 
-    // Validate input shape for non-ensembles (allow some flexibility for edge cases)
+    // Validate input shape for non-ensembles (strict validation)
     if (model.format !== 'ensemble') {
       if (model.inputShape.length > 0) {
         const expectedLength = model.inputShape[0];
         const actualLength = input[0].length;
-        // Allow some flexibility - if input is too short, pad with zeros; if too long, truncate
-        if (actualLength < expectedLength) {
-          // Pad with zeros
-          for (let i = 0; i < input.length; i++) {
-            while (input[i].length < expectedLength) {
-              input[i].push(0);
-            }
-          }
-        } else if (actualLength > expectedLength) {
-          // Truncate
-          for (let i = 0; i < input.length; i++) {
-            input[i] = input[i].slice(0, expectedLength);
+        // Strict validation - throw error if dimensions don't match
+        if (actualLength !== expectedLength) {
+          throw new Error(
+            `Input dimension mismatch: expected ${expectedLength} features, got ${actualLength}. ` +
+            `Model '${modelId}' expects input shape [${model.inputShape.join(', ')}]`
+          );
+        }
+        // Validate all inputs have same length
+        for (let i = 1; i < input.length; i++) {
+          if (input[i].length !== expectedLength) {
+            throw new Error(
+              `Input dimension mismatch at index ${i}: expected ${expectedLength} features, got ${input[i].length}`
+            );
           }
         }
       }

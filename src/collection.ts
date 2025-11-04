@@ -216,7 +216,7 @@ export class Collection {
           const errors: Error[] = [];
 
           // Process in batches for memory efficiency
-          const batchPromises: Promise<void>[] = [];
+          const batchPromises: Promise<{ count: number; ids: string[] }>[] = [];
 
           for (let i = 0; i < documents.length; i += batchSize) {
             batchPromises.push(this.processBatch(
@@ -224,8 +224,6 @@ export class Collection {
               Math.floor(i / batchSize) + 1,
               i + batchSize >= documents.length,
               emitEvents,
-              insertedIds,
-              totalInserted,
               errors,
               continueOnError
             ));
@@ -235,7 +233,13 @@ export class Collection {
           const concurrencyLimit = 5; // Max 5 concurrent batches
           for (let i = 0; i < batchPromises.length; i += concurrencyLimit) {
             const batch = batchPromises.slice(i, i + concurrencyLimit);
-            await Promise.all(batch);
+            const batchResults = await Promise.all(batch);
+
+            // Accumulate results
+            for (const result of batchResults) {
+              totalInserted += result.count;
+              insertedIds.push(...result.ids);
+            }
           }
 
           // Final memory check
@@ -276,11 +280,9 @@ export class Collection {
     batchIndex: number,
     isLastBatch: boolean,
     emitEvents: boolean,
-    insertedIds: string[],
-    totalInserted: number,
     errors: Error[],
     continueOnError: boolean
-  ): Promise<void> {
+  ): Promise<{ count: number; ids: string[] }> {
     try {
       logger.info('Processing bulk insert batch', {
         batchIndex,
@@ -296,15 +298,12 @@ export class Collection {
         batchIds.push(doc._id as string);
       }
 
-      insertedIds.push(...batchIds);
-      totalInserted += batchInserted.length;
-
       // Batch index updates for better performance
       this.updateIndicesForDocuments(batchInserted);
       this.invalidateCacheForIndexedFields();
 
       // Check memory limits periodically
-      if (totalInserted % 10000 === 0) {
+      if (batchInserted.length > 0) {
         this.checkMemoryLimits();
       }
 
@@ -320,6 +319,8 @@ export class Collection {
           });
         }
       }
+
+      return { count: batchInserted.length, ids: batchIds };
     } catch (error) {
       if (continueOnError) {
         errors.push(error as Error);
@@ -327,6 +328,7 @@ export class Collection {
           batchIndex,
           error: (error as Error).message
         });
+        return { count: 0, ids: [] };
       } else {
         throw error;
       }

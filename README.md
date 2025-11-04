@@ -27,6 +27,7 @@
 - [🔍 Vector Search](#-vector-search)
 - [📚 API Reference](#-api-reference)
 - [🛠️ CLI Tool](#️-cli-tool)
+- [📖 Development Scripts](#-development-scripts)
 - [🖥️ Graphical Admin UI](#️-graphical-admin-ui)
 - [🔄 Automated Migration Tools](#-automated-migration-tools)
 - [🤝 Contributing](#-contributing)
@@ -1673,6 +1674,48 @@ const redisMigrator = new RedisMigrationTool({
 
 await redisMigrator.migrate();
 ```
+
+## 📖 Development Scripts
+
+Monarch Database includes a comprehensive set of npm scripts for development, testing, and code quality. See the [Development Scripts Guide](docs/DEVELOPMENT_SCRIPTS.md) for complete documentation.
+
+### Quick Reference
+
+```bash
+# Build & Development
+npm run build          # Production build
+npm run dev            # Development mode with watch
+npm run clean          # Clean build artifacts
+
+# Testing
+npm test               # Run all tests
+npm run test:coverage  # Tests with coverage
+npm run test:watch     # Watch mode
+
+# Code Quality
+npm run lint           # ESLint check
+npm run lint:fix       # Auto-fix lint issues
+npm run format         # Format code
+npm run type-check     # TypeScript validation
+npm run knip           # Dead code detection
+
+# Documentation
+npm run docs           # Generate API docs
+npm run docs:serve     # Serve docs with live reload
+
+# Runtime
+npm run server         # Start HTTP server
+npm run cli            # Run CLI tool
+
+# Migration Tools
+npm run migrate:redis   # Import from Redis
+npm run migrate:mongodb # Import from MongoDB
+
+# Comprehensive Audit
+npm run audit:all      # Run all quality checks
+```
+
+For detailed documentation on all available scripts, see [DEVELOPMENT_SCRIPTS.md](docs/DEVELOPMENT_SCRIPTS.md).
 
 ## 🤝 Contributing
 

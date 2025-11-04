@@ -168,7 +168,7 @@ export class VectorSearchEngine {
    */
   kmeansClustering(vectors: number[][], k: number, maxIterations: number = 100): {
     centroids: number[][];
-    clusters: number[][];
+    clusters: number[][][];
     assignments: number[];
   } {
     // Initialize centroids randomly

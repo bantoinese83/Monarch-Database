@@ -28,7 +28,7 @@ export class AdvancedQueryEngine {
     if (typeof condition === 'object' && condition !== null) {
       // Handle operator conditions
       for (const [operator, operand] of Object.entries(condition)) {
-        if (!this.evaluateOperator(value, operator, operand)) {
+        if (!this.evaluateOperator(doc, value, operator, operand)) {
           return false;
         }
       }
@@ -40,7 +40,7 @@ export class AdvancedQueryEngine {
     return true;
   }
 
-  private static evaluateOperator(value: any, operator: string, operand: any): boolean {
+  private static evaluateOperator(doc: Document, value: any, operator: string, operand: any): boolean {
     switch (operator) {
       case '$eq':
         return this.deepEqual(value, operand);
@@ -99,7 +99,7 @@ export class AdvancedQueryEngine {
         return operand.some(cond => this.matchesAdvancedQuery(value, cond));
 
       case '$not':
-        return !this.evaluateCondition(value, '$not', operand);
+        return !this.matchesAdvancedQuery(value, operand);
 
       case '$nor':
         if (!Array.isArray(operand)) return false;
@@ -160,10 +160,11 @@ export class AdvancedQueryEngine {
         if (typeof operand === 'object' && operand.properties) {
           for (const [prop, schema] of Object.entries(operand.properties)) {
             const propValue = (doc as any)[prop];
-            if (schema.required && (propValue === undefined || propValue === null)) {
+            const schemaObj = schema as any;
+            if (schemaObj.required && (propValue === undefined || propValue === null)) {
               return false;
             }
-            if (schema.type && typeof propValue !== schema.type) {
+            if (schemaObj.type && typeof propValue !== schemaObj.type) {
               return false;
             }
           }

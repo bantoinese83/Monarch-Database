@@ -203,14 +203,22 @@ export interface QueryHint {
 
 // Schema Validation Types
 export interface SchemaProperty {
-  type: string | string[];
-  required?: boolean;
+  type?: string | string[];
+  required?: boolean | string[];
   default?: any;
   min?: number;
   max?: number;
-  pattern?: RegExp;
+  minimum?: number;
+  maximum?: number;
+  minLength?: number;
+  maxLength?: number;
+  pattern?: RegExp | string;
+  format?: string;
   enum?: any[];
   custom?: (value: any) => boolean;
+  properties?: Record<string, SchemaProperty>;
+  items?: SchemaProperty;
+  additionalProperties?: boolean;
 }
 
 export interface SchemaDefinition {
@@ -297,7 +305,7 @@ export interface EventFilter {
   enabled: boolean;
 }
 
-export interface SchemaDefinition {
+export interface JsonSchemaDefinition {
   $schema?: string;
   type: 'object';
   properties?: Record<string, SchemaProperty>;
@@ -305,20 +313,6 @@ export interface SchemaDefinition {
   additionalProperties?: boolean;
 }
 
-export interface SchemaProperty {
-  type?: string | string[];
-  properties?: Record<string, SchemaProperty>;
-  items?: SchemaProperty;
-  enum?: any[];
-  minimum?: number;
-  maximum?: number;
-  minLength?: number;
-  maxLength?: number;
-  pattern?: string;
-  format?: string;
-  required?: string[];
-  additionalProperties?: boolean;
-}
 
 export interface QueryPlan {
   collection: string;

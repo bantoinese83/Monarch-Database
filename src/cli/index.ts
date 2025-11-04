@@ -161,6 +161,7 @@ registry.register({
 
           try {
             // Read existing metadata
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             let metadata: any = { collections: [] };
             try {
               const existingData = readFileSync(metaFile, 'utf-8');
@@ -459,6 +460,7 @@ registry.register({
 
           try {
             // Read existing metadata
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             let metadata: any = { collections: [] };
             try {
               const existingData = readFileSync(metaFile, 'utf-8');

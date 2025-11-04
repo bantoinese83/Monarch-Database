@@ -52,6 +52,7 @@ monarch-data/
 │   │   └── upgrade-guide.md
 │   ├── api-reference.md   # API reference
 │   ├── getting-started.md # Getting started guide
+│   ├── DEVELOPMENT_SCRIPTS.md # Development scripts reference
 │   └── DEVELOPER_ECOSYSTEM.md
 │
 ├── kubernetes/            # Kubernetes manifests
