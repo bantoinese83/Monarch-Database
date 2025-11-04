@@ -25,6 +25,7 @@
 
 import { createClient } from 'redis';
 import { Monarch } from '../src/monarch';
+import { isMainModule } from '../src/utils';
 import { logger } from '../src/logger';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -532,7 +533,7 @@ process.on('SIGTERM', () => {
 });
 
 // Run the migration
-if (require.main === module) {
+if (isMainModule()) {
   main();
 }
 

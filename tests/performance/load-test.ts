@@ -5,6 +5,7 @@
  */
 
 import { Monarch } from '../../src/monarch';
+import { isMainModule } from '../../src/utils';
 
 async function runLoadTest() {
   const db = new Monarch();
@@ -59,7 +60,7 @@ async function runLoadTest() {
 // Export for use in CI/CD
 export { runLoadTest };
 
-if (require.main === module) {
+if (isMainModule()) {
   runLoadTest().then(results => {
     console.log('\n=== Load Test Results ===');
     console.log(JSON.stringify(results, null, 2));

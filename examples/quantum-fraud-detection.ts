@@ -12,6 +12,7 @@
  */
 
 import { Monarch } from '../src/index';
+import { isMainModule } from '../src/utils';
 
 async function quantumFraudDetection() {
   console.log('🌀 QUANTUM FRAUD DETECTION SYSTEM');
@@ -373,7 +374,7 @@ function analyzeFraudPatterns(transactions: any[], accounts: any[]): Array<{
 }
 
 // Run the example
-if (require.main === module) {
+if (isMainModule()) {
   quantumFraudDetection().catch(console.error);
 }
 

@@ -13,6 +13,7 @@
  */
 
 import { Monarch } from '../src/index';
+import { isMainModule } from '../src/utils';
 
 async function quantumRecommendationSystem() {
   console.log('🌀 QUANTUM RECOMMENDATION SYSTEM');
@@ -327,7 +328,7 @@ function calculateUserPreferenceMatch(user: any, product: any): number {
 }
 
 // Run the example
-if (require.main === module) {
+if (isMainModule()) {
   quantumRecommendationSystem().catch(console.error);
 }
 

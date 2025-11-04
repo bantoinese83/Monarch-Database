@@ -13,6 +13,7 @@
  */
 
 import { Monarch } from '../src/monarch';
+import { isMainModule } from '../src/utils';
 
 async function quantumWalkDemo() {
   console.log('🌀 MONARCH QUANTUM WALK ALGORITHM DEMO');
@@ -254,7 +255,7 @@ async function quantumWalkDemo() {
 }
 
 // Run the demo
-if (require.main === module) {
+if (isMainModule()) {
   quantumWalkDemo().catch(error => {
     console.error('\n❌ Demo Error:', error);
     process.exit(1);

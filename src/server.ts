@@ -8,6 +8,7 @@
 import { HTTPServer } from './http-server';
 import { logger } from './logger';
 import { envValidator } from './env-validator';
+import { isMainModule } from './utils';
 
 async function main() {
   // Validate environment
@@ -62,7 +63,7 @@ async function main() {
 }
 
 // Run if executed directly
-if (require.main === module) {
+if (isMainModule()) {
   main().catch((error) => {
     logger.fatal('Unhandled error in server', {}, error);
     process.exit(1);

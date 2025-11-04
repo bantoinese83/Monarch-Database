@@ -13,6 +13,7 @@
  */
 
 import { Monarch } from '../src/index';
+import { isMainModule } from '../src/utils';
 
 async function quantumSocialNetworkAnalysis() {
   console.log('🌀 QUANTUM SOCIAL NETWORK ANALYSIS');
@@ -232,7 +233,7 @@ async function quantumSocialNetworkAnalysis() {
 }
 
 // Run the example
-if (require.main === module) {
+if (isMainModule()) {
   quantumSocialNetworkAnalysis().catch(console.error);
 }
 

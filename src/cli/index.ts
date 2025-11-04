@@ -10,6 +10,7 @@ import { Monarch } from '../monarch';
 import { FileSystemAdapter } from '../adapters/filesystem';
 import { readFileSync, writeFileSync, mkdirSync, existsSync, unlinkSync } from 'fs';
 import { join } from 'path';
+import { isMainModule } from '../utils';
 
 /**
  * CLI command interface
@@ -1139,7 +1140,7 @@ async function main() {
 }
 
 // Run CLI if this is the main module
-if (require.main === module) {
+if (isMainModule()) {
   main().catch(error => {
     // eslint-disable-next-line no-console
     console.error('Fatal error:', error);

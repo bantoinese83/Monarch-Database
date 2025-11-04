@@ -37,3 +37,29 @@ export function isValidId(id: string): boolean {
   // Support both new format (timestamp-based) and legacy format (doc_###)
   return /^[a-zA-Z0-9_.-]+$/.test(id);
 }
+
+/**
+ * Check if the current module is the main entry point
+ * Compatible with both CommonJS and ES module environments
+ */
+export function isMainModule(): boolean {
+  // ES module environment
+  if (typeof import.meta !== 'undefined' && import.meta.url) {
+    try {
+      // Get the current file URL and compare with the main entry point
+      const currentUrl = new URL(import.meta.url);
+      const mainUrl = new URL(process.argv[1], `file://${process.cwd()}/`);
+      return currentUrl.href === mainUrl.href;
+    } catch {
+      return false;
+    }
+  }
+
+  // CommonJS environment
+  if (typeof require !== 'undefined' && require.main) {
+    return require.main === module;
+  }
+
+  // Fallback - assume not main module if we can't determine
+  return false;
+}
