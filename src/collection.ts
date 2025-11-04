@@ -7,7 +7,8 @@ import { CollectionValidator, DocumentValidator, QueryValidator } from './valida
 import { ValidationError, ResourceLimitError, DataIntegrityError } from './errors';
 import { LIMITS, ERROR_MESSAGES } from './constants';
 import { logger } from './logger';
-import { QueryPlanCache, fastClone, fastMerge, globalProfiler } from './performance-optimizer';
+import { QueryPlanCache, fastClone, fastMerge, deepMerge, globalProfiler } from './performance-optimizer';
+import { BulkInsertOptions, BulkInsertResult, BulkDeleteOptions, BulkDeleteResult } from './types';
 
 export class Collection {
   // Use Map for O(1) document access and removal
@@ -143,6 +144,117 @@ export class Collection {
       return inserted;
     } catch (error) {
       globalMonitor.end('insert');
+      throw error;
+    }
+  }
+
+  /**
+   * Bulk insert multiple documents with optimized performance
+   * Designed for large-scale data operations (10k+ documents)
+   */
+  insertMany(documents: Document[], options: BulkInsertOptions = {}): BulkInsertResult {
+    const {
+      batchSize = 5000, // Process in batches of 5k for memory efficiency
+      skipValidation = false,
+      emitEvents = true,
+      timeout = 300000 // 5 minutes default for bulk operations
+    } = options;
+
+    if (!documents || !Array.isArray(documents)) {
+      throw new ValidationError(ERROR_MESSAGES.DOCUMENT_ARRAY_REQUIRED, 'documents', documents);
+    }
+
+    if (documents.length === 0) {
+      return { insertedCount: 0, insertedIds: [] };
+    }
+
+    // Higher limit for bulk operations (100k documents)
+    const maxBulkDocuments = 100000;
+    if (documents.length > maxBulkDocuments) {
+      throw new ResourceLimitError(
+        `Bulk insert too large: maximum ${maxBulkDocuments} documents allowed, got ${documents.length}`,
+        'bulkInsert',
+        maxBulkDocuments,
+        documents.length
+      );
+    }
+
+    // Validate documents if not skipped
+    if (!skipValidation) {
+      logger.info('Validating bulk insert documents', { count: documents.length });
+      for (const document of documents) {
+        DocumentValidator.validate(document);
+      }
+    }
+
+    globalMonitor.startWithTimeout('insertMany', timeout);
+
+    try {
+      const insertedIds: string[] = [];
+      let totalInserted = 0;
+
+      // Process in batches for memory efficiency
+      for (let i = 0; i < documents.length; i += batchSize) {
+        const batch = documents.slice(i, i + batchSize);
+        logger.info('Processing bulk insert batch', {
+          batchIndex: Math.floor(i / batchSize) + 1,
+          batchSize: batch.length,
+          totalProcessed: i + batch.length,
+          totalDocuments: documents.length
+        });
+
+        const batchInserted = this.storeDocuments(batch);
+
+        // Collect IDs and update indices in batches
+        const batchIds: string[] = [];
+        for (const doc of batchInserted) {
+          batchIds.push(doc._id as string);
+        }
+
+        insertedIds.push(...batchIds);
+        totalInserted += batchInserted.length;
+
+        // Batch index updates for better performance
+        this.updateIndicesForDocuments(batchInserted);
+        this.invalidateCacheForIndexedFields();
+
+        // Check memory limits periodically
+        if (totalInserted % 10000 === 0) {
+          this.checkMemoryLimits();
+        }
+
+        // Emit change events if requested (batched)
+        if (emitEvents) {
+          const timestamp = Date.now();
+          for (const doc of batchInserted) {
+            this.emitChangeEvent({
+              type: 'insert',
+              collection: this.name,
+              document: { ...doc },
+              timestamp
+            });
+          }
+        }
+      }
+
+      // Final memory check
+      this.checkMemoryLimits();
+
+      logger.info('Bulk insert completed', {
+        totalDocuments: documents.length,
+        insertedCount: totalInserted,
+        batchSize,
+        duration: globalMonitor.end('insertMany')
+      });
+
+      return {
+        insertedCount: totalInserted,
+        insertedIds
+      };
+
+    } catch (error) {
+      globalMonitor.end('insertMany');
+      logger.error('Bulk insert failed', { error: (error as Error).message, documentsCount: documents.length });
       throw error;
     }
   }
@@ -450,6 +562,89 @@ export class Collection {
   }
 
   /**
+   * Update documents with deep merge support for nested objects
+   * Unlike update(), this method can handle nested object updates
+   */
+  updateDeep(query: Query, changes: UpdateOperation): number {
+    if (!query) {
+      throw new ValidationError(ERROR_MESSAGES.QUERY_REQUIRED, 'query', query);
+    }
+
+    if (!changes || typeof changes !== 'object') {
+      throw new ValidationError(ERROR_MESSAGES.UPDATE_CHANGES_REQUIRED, 'changes', changes);
+    }
+
+    // Allow nested object updates for this method
+    if (!changes || typeof changes !== 'object') {
+      // This should never happen due to the check above, but TypeScript needs it
+      throw new ValidationError(ERROR_MESSAGES.UPDATE_CHANGES_REQUIRED, 'changes', changes);
+    }
+
+    globalMonitor.start('updateDeep');
+
+    try {
+      const matchingDocs = this.find(query);
+      let updatedCount = 0;
+
+      // Collect index updates for batch processing
+      const indexRemovals: Array<{ field: string; value: any; docId: string }> = [];
+      const indexAdditions: Array<{ field: string; value: any; docId: string }> = [];
+
+      for (const doc of matchingDocs) {
+        const docId = doc._id as string;
+
+        // Collect current index values for removal
+        for (const [fieldName] of this.indices) {
+          const oldValue = doc[fieldName];
+          if (oldValue !== undefined) {
+            indexRemovals.push({ field: fieldName, value: oldValue, docId });
+          }
+        }
+
+        // Create new document instance using deepMerge for nested object support
+        const updatedDoc = deepMerge(doc, changes);
+        this.documents.set(docId, updatedDoc);
+        updatedCount++;
+
+        // Collect new index values for addition
+        for (const [fieldName] of this.indices) {
+          const newValue = updatedDoc[fieldName];
+          if (newValue !== undefined) {
+            indexAdditions.push({ field: fieldName, value: newValue, docId });
+          }
+        }
+
+        // Emit change event
+        this.emitChangeEvent({
+          type: 'update',
+          collection: this.name,
+          document: { ...updatedDoc },
+          timestamp: Date.now()
+        });
+      }
+
+      // Batch apply index updates
+      this.batchRemoveFromIndices(indexRemovals);
+      this.batchUpdateIndices(indexAdditions);
+
+      // Invalidate cache
+      this.invalidateCacheForIndexedFields();
+
+      logger.info('Deep update completed', {
+        collection: this.name,
+        matched: matchingDocs.length,
+        updated: updatedCount
+      });
+
+      globalMonitor.end('updateDeep');
+      return updatedCount;
+    } catch (error) {
+      globalMonitor.end('updateDeep');
+      throw error;
+    }
+  }
+
+  /**
    * Remove documents matching the query
    */
   remove(query: Query): number {
@@ -510,6 +705,95 @@ export class Collection {
     }
   }
 
+  /**
+   * Bulk delete multiple documents with optimized performance
+   * Designed for large-scale deletion operations
+   */
+  removeMany(query: Query, options: BulkDeleteOptions = {}): BulkDeleteResult {
+    const {
+      limit,
+      emitEvents = true,
+      timeout = 120000 // 2 minutes default for bulk deletes
+    } = options;
+
+    if (!query) {
+      throw new ValidationError(ERROR_MESSAGES.QUERY_REQUIRED, 'query', query);
+    }
+
+    globalMonitor.startWithTimeout('removeMany', timeout);
+
+    try {
+      let matchingDocs = this.find(query);
+
+      // Apply limit if specified
+      if (limit && limit > 0) {
+        matchingDocs = matchingDocs.slice(0, limit);
+      }
+
+      if (matchingDocs.length === 0) {
+        globalMonitor.end('removeMany');
+        return { deletedCount: 0, deletedIds: [] };
+      }
+
+      let removedCount = 0;
+      const deletedIds: string[] = [];
+
+      // Collect index removals for batch processing
+      const indexRemovals: Array<{ field: string; value: any; docId: string }> = [];
+
+      // Emit change events for documents being removed
+      for (const doc of matchingDocs) {
+        const docId = doc._id as string;
+
+        // Collect current index values for removal
+        for (const [fieldName] of this.indices) {
+          const value = doc[fieldName];
+          if (value !== undefined) {
+            indexRemovals.push({ field: fieldName, value, docId });
+          }
+        }
+
+        // Emit change event if requested
+        if (emitEvents) {
+          this.emitChangeEvent({
+            type: 'remove',
+            collection: this.name,
+            document: { ...doc },
+            timestamp: Date.now()
+          });
+        }
+
+        // Remove from documents map
+        this.documents.delete(docId);
+        deletedIds.push(docId);
+        removedCount++;
+      }
+
+      // Batch remove from indices
+      this.batchRemoveFromIndices(indexRemovals);
+
+      // Invalidate cache
+      this.invalidateCacheForIndexedFields();
+
+      logger.info('Bulk delete completed', {
+        collection: this.name,
+        matched: matchingDocs.length,
+        deleted: removedCount,
+        limit: limit || 'unlimited'
+      });
+
+      globalMonitor.end('removeMany');
+      return {
+        deletedCount: removedCount,
+        deletedIds
+      };
+
+    } catch (error) {
+      globalMonitor.end('removeMany');
+      logger.error('Bulk delete failed', { error: (error as Error).message, query });
+      throw error;
+    }
+  }
 
   /**
    * Get all indices

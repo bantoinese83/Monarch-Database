@@ -215,22 +215,69 @@ export function fastClone<T extends Record<string, any>>(obj: T): T {
  */
 export function fastMerge<T extends Record<string, any>>(target: T, source: Partial<T>): T {
   const merged = {} as T;
-  
+
   // Copy target
   for (const key in target) {
     if (Object.prototype.hasOwnProperty.call(target, key)) {
       merged[key] = target[key];
     }
   }
-  
+
   // Override with source
   for (const key in source) {
     if (Object.prototype.hasOwnProperty.call(source, key)) {
       merged[key] = source[key] as T[Extract<keyof T, string>];
     }
   }
-  
+
   return merged;
+}
+
+/**
+ * Deep merge function that can handle nested objects and arrays
+ * Unlike fastMerge, this performs a deep merge of nested objects
+ */
+export function deepMerge<T extends Record<string, any>>(target: T, source: Partial<T>): T {
+  const merged = {} as T;
+
+  // Copy target properties
+  for (const key in target) {
+    if (Object.prototype.hasOwnProperty.call(target, key)) {
+      const targetValue = target[key];
+      if (isObject(targetValue) && !Array.isArray(targetValue) && targetValue !== null) {
+        merged[key] = { ...targetValue }; // Shallow copy objects for deep merge
+      } else {
+        merged[key] = targetValue;
+      }
+    }
+  }
+
+  // Deep merge source properties
+  for (const key in source) {
+    if (Object.prototype.hasOwnProperty.call(source, key)) {
+      const sourceValue = source[key];
+      const targetValue = merged[key];
+
+      // If both are objects (not arrays or null), deep merge them
+      if (isObject(sourceValue) && isObject(targetValue) &&
+          !Array.isArray(sourceValue) && !Array.isArray(targetValue) &&
+          sourceValue !== null && targetValue !== null) {
+        merged[key] = deepMerge(targetValue as T[Extract<keyof T, string>], sourceValue as Partial<T[Extract<keyof T, string>]>);
+      } else {
+        // For primitives, arrays, or when types don't match, replace entirely
+        merged[key] = sourceValue as T[Extract<keyof T, string>];
+      }
+    }
+  }
+
+  return merged;
+}
+
+/**
+ * Type guard for objects
+ */
+function isObject(value: any): value is Record<string, any> {
+  return typeof value === 'object' && value !== null;
 }
 
 /**

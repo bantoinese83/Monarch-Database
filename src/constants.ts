@@ -41,6 +41,7 @@ export const ERROR_MESSAGES = {
   
   // Document validation
   DOCUMENT_REQUIRED: 'Document(s) required for insert operation',
+  DOCUMENT_ARRAY_REQUIRED: 'Document array required for bulk operations',
   DOCUMENT_MUST_BE_OBJECT: 'Document must be a valid object',
   DOCUMENT_TOO_LARGE: (size: number, max: number) => `Document too large (${size} bytes, max ${max} bytes)`,
   DOCUMENT_CIRCULAR_REF: 'Document contains circular references',

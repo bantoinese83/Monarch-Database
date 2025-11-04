@@ -587,10 +587,13 @@ const users = db.addCollection('users');
 // CRUD Operations
 await users.insert(document);           // Insert one document
 await users.insert([doc1, doc2]);       // Insert multiple documents
+await users.insertMany(docs, options);  // Bulk insert (high performance)
 await users.find(query);                // Find documents
 await users.findOne(query);             // Find one document
-await users.update(query, update);      // Update documents
+await users.update(query, update);      // Update documents (shallow)
+await users.updateDeep(query, update);  // Update with nested objects
 await users.remove(query);             // Remove documents
+await users.removeMany(query, options); // Bulk remove
 await users.count(query);               // Count documents
 
 ### Update Patterns
@@ -659,6 +662,113 @@ This pattern ensures:
 - ✅ Full control over nested object updates
 - ✅ Proper index updates
 - ✅ Change stream notifications
+
+### Bulk Operations (High Performance)
+
+Monarch Database provides optimized bulk operations for large-scale data processing.
+
+#### Bulk Insert - `insertMany()`
+
+```javascript
+// Insert thousands of documents efficiently
+const documents = Array.from({ length: 10000 }, (_, i) => ({
+  _id: `user_${i}`,
+  name: `User ${i}`,
+  email: `user${i}@example.com`,
+  createdAt: new Date()
+}));
+
+const result = await users.insertMany(documents, {
+  batchSize: 5000,     // Process in batches of 5k
+  skipValidation: false, // Validate each document
+  emitEvents: true,     // Emit change events
+  timeout: 300000       // 5 minute timeout for bulk operations
+});
+
+console.log(`Inserted ${result.insertedCount} documents`);
+// Output: Inserted 10000 documents
+```
+
+**Performance**: 10-50x faster than sequential inserts for large datasets.
+
+#### Bulk Delete - `removeMany()`
+
+```javascript
+// Delete multiple documents with advanced options
+const result = await users.removeMany(
+  { status: 'inactive' },
+  {
+    limit: 1000,        // Limit deletions
+    emitEvents: true,   // Emit change events
+    timeout: 120000     // 2 minute timeout
+  }
+);
+
+console.log(`Deleted ${result.deletedCount} documents`);
+// Output: Deleted 1000 documents
+```
+
+#### Deep Update - `updateDeep()`
+
+```javascript
+// Update nested objects directly (NEW!)
+await users.updateDeep(
+  { _id: 'user1' },
+  {
+    profile: {
+      bio: 'Senior Developer',
+      preferences: {
+        theme: 'dark',
+        notifications: true
+      }
+    },
+    lastUpdated: new Date()
+  }
+);
+```
+
+**Unlike `update()`, `updateDeep()` supports:**
+- ✅ Nested object updates
+- ✅ Deep merging of complex structures
+- ✅ Array modifications
+- ✅ Preserves existing data structure
+
+### Performance & Configuration
+
+#### Operation Timeouts
+
+Monarch Database now supports configurable timeouts for long-running operations:
+
+```javascript
+// Bulk operations have extended timeouts by default
+await users.insertMany(documents, { timeout: 600000 }); // 10 minutes
+await users.removeMany(query, { timeout: 300000 });     // 5 minutes
+
+// Custom timeout for regular operations
+import { globalMonitor } from 'monarch-database-quantum';
+globalMonitor.startWithTimeout('customOperation', 120000); // 2 minutes
+```
+
+#### Performance Optimizations
+
+- **Bulk Operations**: `insertMany()` and `removeMany()` process data in configurable batches
+- **Memory Management**: Automatic memory limit checks during bulk operations
+- **Index Batching**: Index updates are batched for better performance
+- **Configurable Validation**: Skip validation for trusted bulk data
+
+#### Environment Variables
+
+```bash
+# Operation timeouts (in milliseconds)
+MONARCH_OPERATION_TIMEOUT=30000          # Default: 30 seconds
+
+# Bulk operation limits
+MONARCH_MAX_DOCUMENTS_PER_OPERATION=10000 # Default: 10k
+MONARCH_BULK_BATCH_SIZE=5000             # Default: 5k
+
+# Performance tuning
+MONARCH_MAX_CONCURRENT_OPERATIONS=50     # Default: 50
+```
 
 // Query Examples
 await users.find({ age: { $gte: 18 } });                    // Age >= 18

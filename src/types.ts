@@ -23,6 +23,29 @@ export interface UpdateOperation {
   [key: string]: any;
 }
 
+export interface BulkInsertOptions {
+  batchSize?: number; // Number of documents to process per batch (default: 5000)
+  skipValidation?: boolean; // Skip document validation for performance (default: false)
+  emitEvents?: boolean; // Emit change events for each inserted document (default: true)
+  timeout?: number; // Timeout in milliseconds for the entire operation (default: 300000)
+}
+
+export interface BulkInsertResult {
+  insertedCount: number; // Number of documents successfully inserted
+  insertedIds: string[]; // Array of inserted document IDs
+}
+
+export interface BulkDeleteOptions {
+  limit?: number; // Maximum number of documents to delete (default: unlimited)
+  emitEvents?: boolean; // Emit change events for each deleted document (default: true)
+  timeout?: number; // Timeout in milliseconds for the entire operation (default: 120000)
+}
+
+export interface BulkDeleteResult {
+  deletedCount: number; // Number of documents successfully deleted
+  deletedIds: string[]; // Array of deleted document IDs
+}
+
 export interface IndexData {
   fieldName: string;
   data: Map<any, Document[]>;

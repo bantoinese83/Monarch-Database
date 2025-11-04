@@ -9,17 +9,36 @@ export interface PerformanceMetrics {
   lastOperationTime: number;
 }
 
+export interface PerformanceMonitorOptions {
+  maxMetrics?: number;
+  maxOperations?: number;
+  defaultTimeout?: number;
+}
+
 export class PerformanceMonitor {
   private metrics = new Map<string, PerformanceMetrics>();
-  private operations = new Map<string, number>(); // operation -> start time
-  private readonly maxMetrics: number = 100; // Prevent unbounded growth
-  private readonly maxOperations: number = 50; // Prevent memory leaks
-  private readonly operationTimeout: number = 30000; // 30 seconds timeout
+  private operations = new Map<string, { startTime: number; timeout: number }>(); // operation -> { startTime, timeout }
+  private readonly maxMetrics: number;
+  private readonly maxOperations: number;
+  private readonly defaultTimeout: number;
+
+  constructor(options: PerformanceMonitorOptions = {}) {
+    this.maxMetrics = options.maxMetrics ?? 100;
+    this.maxOperations = options.maxOperations ?? 50;
+    this.defaultTimeout = options.defaultTimeout ?? 30000; // 30 seconds default
+  }
 
   /**
-   * Start timing an operation
+   * Start timing an operation with default timeout
    */
   start(operation: string): void {
+    this.startWithTimeout(operation, this.defaultTimeout);
+  }
+
+  /**
+   * Start timing an operation with custom timeout
+   */
+  startWithTimeout(operation: string, timeoutMs: number = this.defaultTimeout): void {
     if (!operation || typeof operation !== 'string') {
       logger.warn('Performance monitor: invalid operation name');
       return;
@@ -34,7 +53,10 @@ export class PerformanceMonitor {
     // Clean up timed out operations
     this.cleanupTimedOutOperations();
 
-    this.operations.set(operation, performance.now());
+    this.operations.set(operation, {
+      startTime: performance.now(),
+      timeout: timeoutMs
+    });
   }
 
   /**
@@ -46,12 +68,13 @@ export class PerformanceMonitor {
       return;
     }
 
-    const startTime = this.operations.get(operation);
-    if (startTime === undefined) {
+    const operationData = this.operations.get(operation);
+    if (operationData === undefined) {
       logger.warn('Performance monitor: operation was not started', { operation });
       return;
     }
 
+    const { startTime } = operationData;
     const duration = performance.now() - startTime;
     this.operations.delete(operation);
 
@@ -118,8 +141,9 @@ export class PerformanceMonitor {
     const now = performance.now();
     const timedOutOperations: string[] = [];
 
-    for (const [operation, startTime] of this.operations) {
-      if (now - startTime > this.operationTimeout) {
+    for (const [operation, operationData] of this.operations) {
+      const { startTime, timeout } = operationData;
+      if (now - startTime > timeout) {
         timedOutOperations.push(operation);
       }
     }

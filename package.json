@@ -1,6 +1,6 @@
 {
   "name": "monarch-database-quantum",
-  "version": "1.2.3",
+  "version": "1.2.4",
   "description": "🚀 High-performance, zero-dependency in-memory database for JavaScript/TypeScript - Drop-in replacement for Redis + MongoDB",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
