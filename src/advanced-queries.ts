@@ -105,6 +105,81 @@ export class AdvancedQueryEngine {
         if (!Array.isArray(operand)) return false;
         return !operand.some(cond => this.matchesAdvancedQuery(value, cond));
 
+      case '$mod':
+        if (!Array.isArray(operand) || operand.length !== 2) return false;
+        const [divisor, remainder] = operand;
+        return Number(value) % divisor === remainder;
+
+      case '$where':
+        if (typeof operand === 'string') {
+          try {
+            // Create a function from the string with 'this' bound to the document
+            const func = new Function('return ' + operand);
+            return func.call(doc);
+          } catch (error) {
+            logger.warn('$where evaluation failed', { error: (error as Error).message });
+            return false;
+          }
+        } else if (typeof operand === 'function') {
+          try {
+            return operand.call(doc);
+          } catch (error) {
+            logger.warn('$where function failed', { error: (error as Error).message });
+            return false;
+          }
+        }
+        return false;
+
+      case '$text':
+        // Simplified text search - in production would integrate with full-text search
+        if (typeof operand === 'object' && operand.$search) {
+          const searchTerm = operand.$search.toLowerCase();
+          const fieldValue = String(value).toLowerCase();
+          return fieldValue.includes(searchTerm);
+        }
+        return false;
+
+      case '$bitsAllSet':
+        if (typeof value !== 'number' || !Array.isArray(operand)) return false;
+        return operand.every(bit => (value & (1 << bit)) !== 0);
+
+      case '$bitsAllClear':
+        if (typeof value !== 'number' || !Array.isArray(operand)) return false;
+        return operand.every(bit => (value & (1 << bit)) === 0);
+
+      case '$bitsAnySet':
+        if (typeof value !== 'number' || !Array.isArray(operand)) return false;
+        return operand.some(bit => (value & (1 << bit)) !== 0);
+
+      case '$bitsAnyClear':
+        if (typeof value !== 'number' || !Array.isArray(operand)) return false;
+        return operand.some(bit => (value & (1 << bit)) === 0);
+
+      case '$jsonSchema':
+        // Simplified JSON Schema validation - in production would use a full validator
+        if (typeof operand === 'object' && operand.properties) {
+          for (const [prop, schema] of Object.entries(operand.properties)) {
+            const propValue = (doc as any)[prop];
+            if (schema.required && (propValue === undefined || propValue === null)) {
+              return false;
+            }
+            if (schema.type && typeof propValue !== schema.type) {
+              return false;
+            }
+          }
+          return true;
+        }
+        return false;
+
+      case '$expr':
+        // Expression evaluation - simplified version
+        try {
+          return this.evaluateExpression(doc, operand);
+        } catch (error) {
+          logger.warn('$expr evaluation failed', { error: (error as Error).message });
+          return false;
+        }
+
       default:
         logger.warn('Unknown query operator', { operator });
         return false;
@@ -170,6 +245,33 @@ export class AdvancedQueryEngine {
     }
 
     return false;
+  }
+
+  private static evaluateExpression(doc: Document, expression: any): any {
+    if (typeof expression === 'string' && expression.startsWith('$')) {
+      return this.getNestedValue(doc, expression.substring(1));
+    }
+
+    if (typeof expression === 'object' && expression !== null) {
+      // Handle expression operators
+      if (expression.$eq) return this.evaluateExpression(doc, expression.$eq);
+      if (expression.$ne) return !this.deepEqual(this.evaluateExpression(doc, expression.$ne), true);
+      if (expression.$gt) return this.evaluateExpression(doc, expression.$gt[0]) > this.evaluateExpression(doc, expression.$gt[1]);
+      if (expression.$gte) return this.evaluateExpression(doc, expression.$gte[0]) >= this.evaluateExpression(doc, expression.$gte[1]);
+      if (expression.$lt) return this.evaluateExpression(doc, expression.$lt[0]) < this.evaluateExpression(doc, expression.$lt[1]);
+      if (expression.$lte) return this.evaluateExpression(doc, expression.$lte[0]) <= this.evaluateExpression(doc, expression.$lte[1]);
+      if (expression.$add) return expression.$add.reduce((sum: number, expr: any) => sum + this.evaluateExpression(doc, expr), 0);
+      if (expression.$subtract) return this.evaluateExpression(doc, expression.$subtract[0]) - this.evaluateExpression(doc, expression.$subtract[1]);
+      if (expression.$multiply) return expression.$multiply.reduce((product: number, expr: any) => product * this.evaluateExpression(doc, expr), 1);
+      if (expression.$divide) return this.evaluateExpression(doc, expression.$divide[0]) / this.evaluateExpression(doc, expression.$divide[1]);
+      if (expression.$mod) return this.evaluateExpression(doc, expression.$mod[0]) % this.evaluateExpression(doc, expression.$mod[1]);
+      if (expression.$cond) {
+        const [condition, trueExpr, falseExpr] = expression.$cond;
+        return this.evaluateExpression(doc, condition) ? this.evaluateExpression(doc, trueExpr) : this.evaluateExpression(doc, falseExpr);
+      }
+    }
+
+    return expression;
   }
 
   private static getNestedValue(obj: any, path: string): any {

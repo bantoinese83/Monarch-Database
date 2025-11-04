@@ -47,6 +47,27 @@ export interface MonarchConfig {
    * If not provided, will be lazily created
    */
   clusteringManagerFactory?: () => ClusteringManagerImpl;
+
+  /**
+   * Quantum algorithms configuration
+   */
+  quantum?: {
+    walk?: {
+      maxWalkSteps?: number;
+      convergenceThreshold?: number;
+      dampingFactor?: number;
+    };
+    cache?: {
+      maxSize?: number;
+      ttl?: number;
+      quantumCoherence?: number;
+    };
+    optimizer?: {
+      maxOptimizationDepth?: number;
+      parallelism?: number;
+      adaptiveLearning?: boolean;
+    };
+  };
   
   /**
    * AI/ML integration factory

@@ -70,16 +70,37 @@ users.watch().on('insert', (change) => {
 
 ## ✨ Key Features
 
-- 🌀 **Quantum Algorithms**: World's first quantum walk algorithms for graph databases (shortest path, centrality, community detection)
-- 🚀 **Ultra-High Performance**: Sub-millisecond operations with optimized algorithms
+### Core Database Features
+- 🚀 **Ultra-High Performance**: Sub-millisecond operations with optimized algorithms (365KB gzipped)
+- 🔄 **ACID Transactions**: Full transactional support with rollback capabilities
+- 📊 **Real-time Change Streams**: Live data synchronization with filtering and persistence
+- 🔍 **Advanced Querying**: 25+ MongoDB-style query operators ($eq, $regex, $and, $mod, $where, etc.)
+- 🏷️ **Advanced Indexing**: Compound, unique, sparse, TTL indexes with automatic maintenance
+
+### AI/ML & Vector Search
+- 🎯 **Vector Search**: Similarity search with k-NN, clustering, and dimensionality reduction
+- 🧠 **Embeddings**: Multiple embedding models (TF-IDF, Word2Vec, custom) with generation APIs
+- 📊 **Machine Learning**: K-means clustering, PCA, anomaly detection built-in
+- 🔍 **Full-Text Search**: TF-IDF scoring with highlighting, stemming, and language support
+
+### Quantum Computing
+- ⚛️ **Quantum Algorithms**: World's first quantum walk algorithms for databases
+- 🌀 **Path Finding**: Quantum-enhanced shortest path algorithms
+- 📈 **Centrality Analysis**: Quantum centrality measures for network analysis
+- 👥 **Community Detection**: Quantum interference-based community detection
+
+### Time-Series & Analytics
+- 🕐 **Time-Series Storage**: Specialized temporal data with automatic bucketing
+- 📊 **Downsampling**: Intelligent data compression and retention policies
+- 📈 **Aggregation Framework**: MongoDB-style pipelines ($match, $group, $sort, etc.)
+- 📊 **Real-Time Analytics**: Built-in monitoring, performance metrics, and profiling
+
+### Enterprise Features
 - 🖥️ **Graphical Admin UI**: Modern web-based database management interface
 - 🔄 **Automated Migration Tools**: Easy migration from Redis and MongoDB
-- 🔍 **Advanced Queries**: MongoDB-style queries with indexing and aggregation
-- 🧠 **AI-Ready**: Native vector search and embeddings support
-- 🏗️ **Rich Data Structures**: Lists, Sets, Hashes, Sorted Sets, Streams, Geospatial
+- 🛡️ **Schema Validation**: JSON Schema with custom rules and evolution
 - 🔐 **Enterprise Security**: End-to-end encryption, RBAC, audit logging
-- 📊 **Real-Time Analytics**: Built-in monitoring and performance metrics
-- 🔄 **Change Streams**: Real-time data change notifications
+- 🌍 **Geospatial Queries**: Location-based operations with Haversine distance
 - 🌐 **Clustering**: Horizontal scaling with automatic failover
 - 📱 **Multi-Platform**: Node.js, Browser, and Python support
 

@@ -15,6 +15,9 @@ import { ClusteringManagerImpl } from './clustering-manager';
 import { AIMLIntegration } from './ai-ml-integration';
 import { ScriptingEngineImpl } from './scripting-engine';
 import { GraphDatabase } from './graph-database';
+import { VectorEngine } from './vector-engine';
+import { QuantumAPI } from './quantum-api';
+import { TimeSeriesEngine } from './time-series-engine';
 import { ValidationError, ResourceLimitError } from './errors';
 import { logger } from './logger';
 import { MonarchConfig } from './monarch-config';
@@ -48,6 +51,11 @@ export class Monarch {
   private _aiIntegration?: AIMLIntegration;
   private _scriptingEngine?: ScriptingEngineImpl;
   private _graphDatabase?: GraphDatabase;
+
+  // Advanced engines
+  private vectorEngine: VectorEngine;
+  private quantumAPI: QuantumAPI;
+  private timeSeriesEngine: TimeSeriesEngine;
 
   // Configuration and factories for dependency injection
   private config: MonarchConfig;
@@ -109,6 +117,11 @@ export class Monarch {
     this.changeStreams = new ChangeStreamsManager();
     this.schemaValidator = new SchemaValidator();
     this.queryOptimizer = new QueryOptimizer();
+
+    // Initialize advanced engines
+    this.vectorEngine = new VectorEngine();
+    this.quantumAPI = new QuantumAPI(this.config.quantum);
+    this.timeSeriesEngine = new TimeSeriesEngine();
   }
 
   /**
@@ -1259,6 +1272,154 @@ export class Monarch {
     return this.scriptingEngine.createStoredProcedure(name, scriptId, parameters);
   }
 
+  // ===== VECTOR SEARCH METHODS =====
+
+  /**
+   * Store a vector embedding
+   */
+  storeVector(collection: string, docId: string, vector: number[], metadata?: any): void {
+    return this.vectorEngine.storeVector(collection, docId, vector, metadata);
+  }
+
+  /**
+   * Search for similar vectors
+   */
+  searchVectors(collection: string, queryVector: number[], options?: any): Promise<any[]> {
+    return this.vectorEngine.searchSimilar(collection, queryVector, options);
+  }
+
+  /**
+   * Create a vector index
+   */
+  createVectorIndex(collection: string, options: any): string {
+    return this.vectorEngine.createVectorIndex(collection, options);
+  }
+
+  /**
+   * Generate embeddings using built-in models
+   */
+  generateEmbedding(text: string, model?: string): Promise<number[]> {
+    return this.vectorEngine.generateEmbedding(text, model);
+  }
+
+  /**
+   * Get vector statistics
+   */
+  getVectorStats(collection: string): any {
+    return this.vectorEngine.getVectorStats(collection);
+  }
+
+  // ===== QUANTUM ALGORITHMS METHODS =====
+
+  /**
+   * Execute quantum path finding
+   */
+  quantumPathFinding(graph: any, startNode: string, endNode: string, options?: any): Promise<any> {
+    return this.quantumAPI.findPath(graph, startNode, endNode, options);
+  }
+
+  /**
+   * Calculate quantum centrality
+   */
+  quantumCentrality(graph: any, options?: any): Promise<any> {
+    return this.quantumAPI.calculateCentrality(graph, options);
+  }
+
+  /**
+   * Detect quantum communities
+   */
+  quantumCommunities(graph: any, options?: any): Promise<any> {
+    return this.quantumAPI.detectCommunities(graph, options);
+  }
+
+  /**
+   * Optimize query using quantum algorithms
+   */
+  quantumQueryOptimization(query: any, collection: any[], options?: any): Promise<any> {
+    return this.quantumAPI.optimizeQuery(query, collection, options);
+  }
+
+  /**
+   * Configure quantum algorithms
+   */
+  configureQuantum(options: any): void {
+    return this.quantumAPI.configure(options);
+  }
+
+  /**
+   * Get quantum algorithm statistics
+   */
+  getQuantumStats(): any {
+    return this.quantumAPI.getStats();
+  }
+
+  // ===== TIME-SERIES METHODS =====
+
+  /**
+   * Create a time-series collection
+   */
+  createTimeSeriesCollection(name: string, options?: any): void {
+    return this.timeSeriesEngine.createCollection(name, options);
+  }
+
+  /**
+   * Insert time-series data
+   */
+  insertTimeSeriesData(collection: string, points: any[]): void {
+    return this.timeSeriesEngine.insert(collection, points);
+  }
+
+  /**
+   * Query time-series data
+   */
+  queryTimeSeries(collection: string, query: any): any {
+    return this.timeSeriesEngine.query(collection, query);
+  }
+
+  /**
+   * Downsample time-series data
+   */
+  downsampleTimeSeries(collection: string, options: any): void {
+    return this.timeSeriesEngine.downsample(collection, options);
+  }
+
+  /**
+   * Get time-series statistics
+   */
+  getTimeSeriesStats(collection: string): any {
+    return this.timeSeriesEngine.getStats(collection);
+  }
+
+  // ===== ENHANCED CHANGE STREAMS METHODS =====
+
+  /**
+   * Add an event filter
+   */
+  addEventFilter(filter: any): string {
+    return this.changeStreams.addEventFilter(filter);
+  }
+
+  /**
+   * Remove an event filter
+   */
+  removeEventFilter(filterId: string): boolean {
+    return this.changeStreams.removeEventFilter(filterId);
+  }
+
+  /**
+   * Get persistent events
+   */
+  getPersistentEvents(collection: string, limit?: number): any[] {
+    return this.changeStreams.getPersistentEvents(collection, limit);
+  }
+
+  /**
+   * Clear persistent events
+   */
+  clearPersistentEvents(collection?: string): void {
+    return this.changeStreams.clearPersistentEvents(collection);
+  }
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private serialize(): any {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -1485,12 +1646,6 @@ export class Monarch {
     return this.graphDatabase.traverse(startNodeId, options);
   }
 
-  /**
-   * Get quantum engine statistics
-   */
-  getQuantumStats() {
-    return this.graphDatabase.getQuantumStats();
-  }
 
   /**
    * Get performance statistics

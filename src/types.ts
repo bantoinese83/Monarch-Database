@@ -262,18 +262,37 @@ export interface ChangeEvent {
   oldDocument?: Document;
   timestamp: number;
   transactionId?: string;
+  _resumeToken?: string; // For resume capability
 }
 
 export interface ChangeStreamOptions {
   collection?: string;
   operation?: 'insert' | 'update' | 'remove';
   filter?: (event: ChangeEvent) => boolean;
+  documentFilter?: Document; // Filter by document field values
+  fieldFilter?: string[]; // Only include specific fields in events
+  persistent?: boolean; // Store events for resume capability
+  resumeAfter?: string; // Resume token
+  startAtOperationTime?: number; // Start from specific timestamp
+  maxAwaitTimeMS?: number; // Maximum wait time for new events
+  batchSize?: number; // Number of events to return in each batch
 }
 
 export interface ChangeStreamListener {
   id: string;
   options: ChangeStreamOptions;
   callback: (event: ChangeEvent) => void;
+  resumeToken?: string;
+  lastEventTime?: number;
+}
+
+export interface EventFilter {
+  id: string;
+  collection?: string;
+  field?: string;
+  operator: 'eq' | 'ne' | 'gt' | 'gte' | 'lt' | 'lte' | 'in' | 'nin' | 'regex' | 'exists';
+  value: any;
+  enabled: boolean;
 }
 
 export interface SchemaDefinition {
