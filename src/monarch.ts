@@ -395,7 +395,11 @@ export class Monarch {
       return { valid: true }; // No schema means no validation
     }
 
-    return this.schemaValidator.validate(document, schema);
+    const result = this.schemaValidator.validateDocument(collectionName, document);
+    return {
+      valid: result.valid,
+      errors: result.errors.map(e => `${e.field}: ${e.message}`)
+    };
   }
 
   // ===== CHANGE STREAMS METHODS =====

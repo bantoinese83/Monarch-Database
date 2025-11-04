@@ -46,6 +46,185 @@ export interface BulkDeleteResult {
   deletedIds: string[]; // Array of deleted document IDs
 }
 
+// Aggregation Framework Types
+export interface AggregationPipeline {
+  stages: AggregationStage[];
+}
+
+export type AggregationStage =
+  | { $match: Query }
+  | { $group: GroupStage }
+  | { $sort: Record<string, 1 | -1> }
+  | { $limit: number }
+  | { $skip: number }
+  | { $project: Record<string, any> }
+  | { $unwind: string | { path: string; preserveNullAndEmptyArrays?: boolean } }
+  | { $lookup: LookupStage }
+  | { $addFields: Record<string, any> }
+  | { $replaceRoot: { newRoot: any } };
+
+export interface GroupStage {
+  _id: any; // Group key expression
+  [field: string]: any; // Accumulator expressions
+}
+
+export interface LookupStage {
+  from: string; // Collection to join with
+  localField: string; // Field from input documents
+  foreignField: string; // Field from documents of the "from" collection
+  as: string; // Output array field
+}
+
+export interface AggregationResult {
+  documents: Document[];
+  executionTime: number;
+  stagesExecuted: number;
+  documentsProcessed: number;
+}
+
+// Full-Text Search Types
+export interface TextSearchOptions {
+  language?: string;
+  caseSensitive?: boolean;
+  diacriticSensitive?: boolean;
+  scoreField?: string;
+  limit?: number;
+}
+
+export interface TextSearchResult {
+  document: Document;
+  score: number;
+  highlights?: string[];
+}
+
+// Geospatial Types
+export interface Point {
+  type: 'Point';
+  coordinates: [number, number]; // [longitude, latitude]
+}
+
+export interface GeoQuery {
+  $near?: {
+    $geometry: Point;
+    $maxDistance?: number;
+    $minDistance?: number;
+  };
+  $geoWithin?: {
+    $geometry: Polygon | MultiPolygon | Point;
+  };
+  $geoIntersects?: {
+    $geometry: any;
+  };
+}
+
+export interface Polygon {
+  type: 'Polygon';
+  coordinates: number[][][];
+}
+
+export interface MultiPolygon {
+  type: 'MultiPolygon';
+  coordinates: number[][][][];
+}
+
+// Advanced Indexing Types
+export interface IndexOptions {
+  unique?: boolean;
+  sparse?: boolean;
+  background?: boolean;
+  name?: string;
+  expireAfterSeconds?: number;
+  text?: boolean;
+  weights?: Record<string, number>;
+  defaultLanguage?: string;
+  languageOverride?: string;
+}
+
+// Database Operations Types
+export interface DatabaseStats {
+  collections: number;
+  documents: number;
+  indexes: number;
+  totalSize: number;
+  avgDocumentSize: number;
+  storageSize: number;
+  uptime: number;
+  memoryUsage: number;
+  operationsPerSecond: number;
+}
+
+export interface CollectionStats {
+  name: string;
+  documentCount: number;
+  indexCount: number;
+  totalSize: number;
+  avgDocumentSize: number;
+  lastModified: Date;
+}
+
+// Connection Pool Types
+export interface ConnectionPoolOptions {
+  minConnections?: number;
+  maxConnections?: number;
+  acquireTimeoutMillis?: number;
+  createTimeoutMillis?: number;
+  destroyTimeoutMillis?: number;
+  reapIntervalMillis?: number;
+  createRetryIntervalMillis?: number;
+  propagateCreateError?: boolean;
+}
+
+export interface ConnectionPoolStats {
+  totalConnections: number;
+  idleConnections: number;
+  pendingConnections: number;
+  borrowedConnections: number;
+}
+
+// Query Profiling Types
+export interface QueryProfile {
+  query: Query;
+  executionTime: number;
+  documentsExamined: number;
+  documentsReturned: number;
+  indexesUsed: string[];
+  optimizationHints: string[];
+  timestamp: Date;
+}
+
+export interface QueryHint {
+  strategy: 'index' | 'scan' | 'cache';
+  indexName?: string;
+  estimatedCost: number;
+  actualCost: number;
+}
+
+// Schema Validation Types
+export interface SchemaProperty {
+  type: string | string[];
+  required?: boolean;
+  default?: any;
+  min?: number;
+  max?: number;
+  pattern?: RegExp;
+  enum?: any[];
+  custom?: (value: any) => boolean;
+}
+
+export interface SchemaDefinition {
+  [field: string]: SchemaProperty;
+}
+
+
+export interface SchemaValidationResult {
+  valid: boolean;
+  errors: Array<{
+    field: string;
+    value: any;
+    message: string;
+  }>;
+}
+
 export interface IndexData {
   fieldName: string;
   data: Map<any, Document[]>;

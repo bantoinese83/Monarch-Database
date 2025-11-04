@@ -596,6 +596,24 @@ await users.remove(query);             // Remove documents
 await users.removeMany(query, options); // Bulk remove
 await users.count(query);               // Count documents
 
+// Advanced Operations
+await users.aggregate(pipeline);        // Aggregation framework
+await users.createIndex(fields, options); // Advanced indexing
+
+// Database Operations
+await db.getStats();                   // Database statistics
+await db.createCollection(name);       // Create collection
+await db.dropCollection(name);         // Drop collection
+await db.exportDatabase();             // Backup database
+
+// Full-Text Search
+await db.createTextIndex(collection, fields, options);
+const results = await db.searchTextIndex(indexName, query, options);
+
+// Schema Management
+db.registerSchema(collection, schema);
+const valid = await db.validateDocument(collection, doc);
+
 ### Update Patterns
 
 Monarch Database supports **shallow updates only** - you cannot update nested objects directly.
@@ -732,6 +750,290 @@ await users.updateDeep(
 - ✅ Deep merging of complex structures
 - ✅ Array modifications
 - ✅ Preserves existing data structure
+
+## 🏗️ **Modern Database Features**
+
+Monarch Database now includes enterprise-grade features expected from modern databases:
+
+### 📊 **Aggregation Framework** - `aggregate()`
+
+MongoDB-style aggregation pipelines with stages like `$match`, `$group`, `$sort`, `$project`, etc.
+
+```javascript
+const pipeline = [
+  { $match: { status: 'active', age: { $gte: 18 } } },
+  { $group: {
+      _id: '$department',
+      totalEmployees: { $sum: 1 },
+      avgSalary: { $avg: '$salary' },
+      maxSalary: { $max: '$salary' },
+      employees: { $push: '$name' }
+    }
+  },
+  { $sort: { totalEmployees: -1 } }
+];
+
+const results = await employees.aggregate(pipeline);
+```
+
+**Supported Stages:**
+- `$match` - Filter documents
+- `$group` - Group and aggregate data
+- `$sort` - Sort results
+- `$limit` / `$skip` - Pagination
+- `$project` - Reshape documents
+- `$unwind` - Deconstruct arrays
+- `$lookup` - Join collections
+- `$addFields` - Add new fields
+- `$replaceRoot` - Replace document root
+
+### 🔍 **Full-Text Search** - `createTextIndex()`, `search()`
+
+Advanced text search with scoring, stemming, and highlighting.
+
+```javascript
+// Create text index
+await db.createTextIndex('articles', ['title', 'content'], {
+  weights: { title: 10, content: 1 }
+});
+
+// Search with scoring
+const results = await db.searchTextIndex('articles', 'quantum computing', {
+  limit: 10,
+  scoreField: 'relevanceScore'
+});
+
+console.log(results[0]); // { document: {...}, score: 0.85, highlights: [...] }
+```
+
+**Features:**
+- ✅ TF-IDF scoring algorithm
+- ✅ Configurable field weights
+- ✅ Search result highlighting
+- ✅ Stemming and stop words
+- ✅ Multiple language support
+
+### 🌍 **Geospatial Queries** - `$near`, `$geoWithin`
+
+Location-based queries for mapping and location services.
+
+```javascript
+// Store locations
+await places.insert({
+  name: 'Central Park',
+  location: { type: 'Point', coordinates: [-73.968, 40.782] }
+});
+
+// Find nearby places
+const nearby = await places.find({
+  location: {
+    $near: {
+      $geometry: { type: 'Point', coordinates: [-73.985, 40.758] },
+      $maxDistance: 5000 // 5km
+    }
+  }
+});
+
+// Find places within polygon
+const inArea = await places.find({
+  location: {
+    $geoWithin: {
+      $geometry: polygonDefinition
+    }
+  }
+});
+```
+
+**Supported Operations:**
+- `$near` - Find nearest points
+- `$geoWithin` - Points within geometry
+- `$geoIntersects` - Geometry intersection
+- Distance calculations (Haversine formula)
+- Bounding box queries
+
+### 🏷️ **Advanced Indexing**
+
+Compound indexes, unique constraints, and specialized index types.
+
+```javascript
+// Compound index
+await users.createIndex(['email', 'status'], { unique: true });
+
+// Text index for full-text search
+await articles.createIndex(['title', 'content'], {
+  text: true,
+  weights: { title: 10, content: 1 }
+});
+
+// TTL (Time-To-Live) index
+await sessions.createIndex(['expiresAt'], {
+  expireAfterSeconds: 3600 // Auto-delete after 1 hour
+});
+
+// Sparse index (only indexes non-null values)
+await users.createIndex(['lastLogin'], { sparse: true });
+```
+
+### 🔧 **Advanced Query Operators**
+
+MongoDB-compatible query operators for complex queries.
+
+```javascript
+// Regular expressions
+await users.find({ email: { $regex: '@company\.com$' } });
+
+// Type checking
+await documents.find({ score: { $type: 'number' } });
+
+// Existence checks
+await users.find({ profile: { $exists: true } });
+
+// Array operations
+await posts.find({ tags: { $all: ['javascript', 'typescript'] } });
+await posts.find({ tags: { $size: 3 } });
+
+// Element matching
+await orders.find({
+  items: {
+    $elemMatch: { price: { $gt: 100 }, category: 'electronics' }
+  }
+});
+
+// Logical operators
+await users.find({
+  $and: [
+    { age: { $gte: 18 } },
+    { $or: [{ status: 'active' }, { role: 'admin' }] }
+  ]
+});
+```
+
+### 📈 **Database Statistics & Monitoring**
+
+Real-time database metrics and performance monitoring.
+
+```javascript
+// Database-wide statistics
+const stats = await db.getStats();
+console.log(`Collections: ${stats.collections}`);
+console.log(`Total Documents: ${stats.documents}`);
+console.log(`Operations/sec: ${stats.operationsPerSecond}`);
+
+// Collection-specific stats
+const userStats = await db.getCollectionStats('users');
+console.log(`Users: ${userStats.documentCount}`);
+console.log(`Avg Size: ${userStats.avgDocumentSize} bytes`);
+
+// Query profiling
+const profile = await db.profileQuery(query, executionTime, examined, returned);
+console.log(`Query took ${profile.executionTime}ms`);
+console.log(`Optimization hints:`, profile.optimizationHints);
+```
+
+### 🛡️ **Schema Validation**
+
+JSON Schema-style validation with custom rules.
+
+```javascript
+// Define schema
+const userSchema = {
+  name: { type: 'string', required: true, min: 2, max: 50 },
+  email: { type: 'string', required: true, pattern: /^[^@]+@[^@]+\.[^@]+$/ },
+  age: { type: 'number', min: 0, max: 150 },
+  role: { type: 'string', enum: ['user', 'admin', 'moderator'] },
+  tags: { type: ['string'], max: 10 } // Array of strings
+};
+
+// Register schema
+db.registerSchema('users', userSchema);
+
+// Validate documents
+const result = await db.validateDocument('user1');
+if (!result.valid) {
+  console.log('Validation errors:', result.errors);
+}
+
+// Auto-generate schema from existing data
+const inferredSchema = db.generateSchemaFromDocuments('products', sampleProducts);
+```
+
+### 🔄 **Schema Evolution**
+
+Safe schema updates with breaking change detection.
+
+```javascript
+// Evolve schema safely
+const success = db.evolveSchema('users', newSchema, {
+  allowBreakingChanges: false, // Prevent breaking changes
+  migrateExisting: true        // Migrate existing data
+});
+
+if (!success) {
+  console.log('Schema evolution blocked - would break existing data');
+}
+```
+
+### 🏢 **Database Operations**
+
+Database-level management operations.
+
+```javascript
+// Collection management
+await db.createCollection('newCollection');
+await db.renameCollection('oldName', 'newName');
+const dropped = await db.dropCollection('tempCollection');
+
+// Database maintenance
+const maintenance = await db.runMaintenance();
+console.log(`Optimized ${maintenance.collectionsOptimized} collections`);
+
+// Backup and restore
+const backup = await db.exportDatabase();
+// ... save backup ...
+await db.importDatabase(backup);
+```
+
+### 🚀 **Performance & Configuration**
+
+Advanced performance tuning and monitoring.
+
+#### Operation Timeouts
+
+```javascript
+// Custom timeouts for different operations
+globalMonitor.startWithTimeout('bulkImport', 600000); // 10 minutes
+globalMonitor.startWithTimeout('complexQuery', 30000); // 30 seconds
+```
+
+#### Connection Pooling (Future)
+
+```javascript
+// Configure connection pool
+const db = new Monarch({
+  connectionPool: {
+    minConnections: 2,
+    maxConnections: 10,
+    acquireTimeoutMillis: 30000
+  }
+});
+```
+
+#### Environment Variables
+
+```bash
+# Performance tuning
+MONARCH_MAX_DOCUMENTS_PER_OPERATION=10000
+MONARCH_BULK_BATCH_SIZE=5000
+MONARCH_OPERATION_TIMEOUT=30000
+MONARCH_MAX_CONCURRENT_OPERATIONS=50
+
+# Indexing
+MONARCH_INDEX_BATCH_SIZE=1000
+MONARCH_TEXT_INDEX_LANGUAGE=english
+
+# Schema validation
+MONARCH_STRICT_SCHEMA_VALIDATION=true
+```
 
 ### Performance & Configuration
 
