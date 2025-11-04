@@ -68,6 +68,16 @@ export interface MonarchConfig {
       adaptiveLearning?: boolean;
     };
   };
+
+  /**
+   * Concurrency and performance configuration
+   */
+  concurrency?: {
+    maxConcurrentOperations?: number;
+    maxOperationsPerSecond?: number;
+    circuitBreakerThreshold?: number;
+    enableCircuitBreaker?: boolean;
+  };
   
   /**
    * AI/ML integration factory

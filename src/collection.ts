@@ -3,6 +3,7 @@ import { generateSequentialId, isValidId } from './utils';
 import { QueryEngine } from './query-engine';
 import { QueryCache } from './query-cache';
 import { globalMonitor } from './performance-monitor';
+import { globalConcurrencyManager } from './concurrency-manager';
 import { CollectionValidator, DocumentValidator, QueryValidator } from './validators';
 import { ValidationError, ResourceLimitError, DataIntegrityError } from './errors';
 import { LIMITS, ERROR_MESSAGES } from './constants';
@@ -152,12 +153,14 @@ export class Collection {
    * Bulk insert multiple documents with optimized performance
    * Designed for large-scale data operations (10k+ documents)
    */
-  insertMany(documents: Document[], options: BulkInsertOptions = {}): BulkInsertResult {
+  async insertMany(documents: Document[], options: BulkInsertOptions = {}): Promise<BulkInsertResult> {
     const {
-      batchSize = 5000, // Process in batches of 5k for memory efficiency
+      batchSize = 10000, // Increased batch size for better throughput
       skipValidation = false,
       emitEvents = true,
-      timeout = 300000 // 5 minutes default for bulk operations
+      timeout = 600000, // 10 minutes default for bulk operations
+      priority = 0,
+      continueOnError = false // New: continue processing even if some documents fail
     } = options;
 
     if (!documents || !Array.isArray(documents)) {
@@ -168,94 +171,165 @@ export class Collection {
       return { insertedCount: 0, insertedIds: [] };
     }
 
-    // Higher limit for bulk operations (100k documents)
-    const maxBulkDocuments = 100000;
-    if (documents.length > maxBulkDocuments) {
+    // Use the new higher limit from constants
+    if (documents.length > LIMITS.MAX_DOCUMENTS_PER_OPERATION) {
       throw new ResourceLimitError(
-        `Bulk insert too large: maximum ${maxBulkDocuments} documents allowed, got ${documents.length}`,
+        `Bulk insert too large: maximum ${LIMITS.MAX_DOCUMENTS_PER_OPERATION} documents allowed, got ${documents.length}`,
         'bulkInsert',
-        maxBulkDocuments,
+        LIMITS.MAX_DOCUMENTS_PER_OPERATION,
         documents.length
       );
     }
 
-    // Validate documents if not skipped
-    if (!skipValidation) {
-      logger.info('Validating bulk insert documents', { count: documents.length });
-      for (const document of documents) {
-        DocumentValidator.validate(document);
-      }
-    }
+    // Use concurrency manager to handle this bulk operation
+    return globalConcurrencyManager.execute(
+      `bulk_insert_${this.name}_${Date.now()}`,
+      async () => {
+        // Validate documents if not skipped
+        if (!skipValidation) {
+          logger.info('Validating bulk insert documents', { count: documents.length });
+          const validationPromises: Promise<void>[] = [];
 
-    globalMonitor.startWithTimeout('insertMany', timeout);
+          for (let i = 0; i < documents.length; i += 1000) {
+            const batch = documents.slice(i, i + 1000);
+            validationPromises.push(
+              Promise.resolve().then(() => {
+                for (const document of batch) {
+                  DocumentValidator.validate(document);
+                }
+              })
+            );
+          }
 
-    try {
-      const insertedIds: string[] = [];
-      let totalInserted = 0;
-
-      // Process in batches for memory efficiency
-      for (let i = 0; i < documents.length; i += batchSize) {
-        const batch = documents.slice(i, i + batchSize);
-        logger.info('Processing bulk insert batch', {
-          batchIndex: Math.floor(i / batchSize) + 1,
-          batchSize: batch.length,
-          totalProcessed: i + batch.length,
-          totalDocuments: documents.length
-        });
-
-        const batchInserted = this.storeDocuments(batch);
-
-        // Collect IDs and update indices in batches
-        const batchIds: string[] = [];
-        for (const doc of batchInserted) {
-          batchIds.push(doc._id as string);
-        }
-
-        insertedIds.push(...batchIds);
-        totalInserted += batchInserted.length;
-
-        // Batch index updates for better performance
-        this.updateIndicesForDocuments(batchInserted);
-        this.invalidateCacheForIndexedFields();
-
-        // Check memory limits periodically
-        if (totalInserted % 10000 === 0) {
-          this.checkMemoryLimits();
-        }
-
-        // Emit change events if requested (batched)
-        if (emitEvents) {
-          const timestamp = Date.now();
-          for (const doc of batchInserted) {
-            this.emitChangeEvent({
-              type: 'insert',
-              collection: this.name,
-              document: { ...doc },
-              timestamp
-            });
+          // Run validation in parallel but limit concurrency
+          await Promise.all(validationPromises.slice(0, 10)); // Max 10 concurrent validation batches
+          if (validationPromises.length > 10) {
+            await Promise.all(validationPromises.slice(10));
           }
         }
-      }
 
-      // Final memory check
-      this.checkMemoryLimits();
+        globalMonitor.startWithTimeout('insertMany', timeout);
 
-      logger.info('Bulk insert completed', {
-        totalDocuments: documents.length,
-        insertedCount: totalInserted,
-        batchSize,
-        duration: globalMonitor.end('insertMany')
+        try {
+          const insertedIds: string[] = [];
+          let totalInserted = 0;
+          const errors: Error[] = [];
+
+          // Process in batches for memory efficiency
+          const batchPromises: Promise<void>[] = [];
+
+          for (let i = 0; i < documents.length; i += batchSize) {
+            batchPromises.push(this.processBatch(
+              documents.slice(i, i + batchSize),
+              Math.floor(i / batchSize) + 1,
+              i + batchSize >= documents.length,
+              emitEvents,
+              insertedIds,
+              totalInserted,
+              errors,
+              continueOnError
+            ));
+          }
+
+          // Execute batches with controlled concurrency
+          const concurrencyLimit = 5; // Max 5 concurrent batches
+          for (let i = 0; i < batchPromises.length; i += concurrencyLimit) {
+            const batch = batchPromises.slice(i, i + concurrencyLimit);
+            await Promise.all(batch);
+          }
+
+          // Final memory check
+          this.checkMemoryLimits();
+
+          const duration = globalMonitor.end('insertMany');
+          logger.info('Bulk insert completed', {
+            totalDocuments: documents.length,
+            insertedCount: totalInserted,
+            batchSize,
+            duration,
+            errors: errors.length
+          });
+
+          const result: BulkInsertResult = {
+            insertedCount: totalInserted,
+            insertedIds
+          };
+
+          if (errors.length > 0 && !continueOnError) {
+            throw new Error(`Bulk insert failed: ${errors.length} errors occurred`);
+          }
+
+          return result;
+
+        } catch (error) {
+          globalMonitor.end('insertMany');
+          logger.error('Bulk insert failed', { error: (error as Error).message, documentsCount: documents.length });
+          throw error;
+        }
+      },
+      { priority, timeout, bypassLimits: false }
+    );
+  }
+
+  private async processBatch(
+    batch: Document[],
+    batchIndex: number,
+    isLastBatch: boolean,
+    emitEvents: boolean,
+    insertedIds: string[],
+    totalInserted: number,
+    errors: Error[],
+    continueOnError: boolean
+  ): Promise<void> {
+    try {
+      logger.info('Processing bulk insert batch', {
+        batchIndex,
+        batchSize: batch.length,
+        isLastBatch
       });
 
-      return {
-        insertedCount: totalInserted,
-        insertedIds
-      };
+      const batchInserted = this.storeDocuments(batch);
 
+      // Collect IDs and update indices in batches
+      const batchIds: string[] = [];
+      for (const doc of batchInserted) {
+        batchIds.push(doc._id as string);
+      }
+
+      insertedIds.push(...batchIds);
+      totalInserted += batchInserted.length;
+
+      // Batch index updates for better performance
+      this.updateIndicesForDocuments(batchInserted);
+      this.invalidateCacheForIndexedFields();
+
+      // Check memory limits periodically
+      if (totalInserted % 10000 === 0) {
+        this.checkMemoryLimits();
+      }
+
+      // Emit change events if requested (batched)
+      if (emitEvents) {
+        const timestamp = Date.now();
+        for (const doc of batchInserted) {
+          this.emitChangeEvent({
+            type: 'insert',
+            collection: this.name,
+            document: { ...doc },
+            timestamp
+          });
+        }
+      }
     } catch (error) {
-      globalMonitor.end('insertMany');
-      logger.error('Bulk insert failed', { error: (error as Error).message, documentsCount: documents.length });
-      throw error;
+      if (continueOnError) {
+        errors.push(error as Error);
+        logger.warn('Batch processing failed but continuing', {
+          batchIndex,
+          error: (error as Error).message
+        });
+      } else {
+        throw error;
+      }
     }
   }
 

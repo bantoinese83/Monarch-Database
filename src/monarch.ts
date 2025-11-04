@@ -18,6 +18,7 @@ import { GraphDatabase } from './graph-database';
 import { VectorEngine } from './vector-engine';
 import { QuantumAPI } from './quantum-api';
 import { TimeSeriesEngine } from './time-series-engine';
+import { globalConcurrencyManager } from './concurrency-manager';
 import { ValidationError, ResourceLimitError } from './errors';
 import { logger } from './logger';
 import { MonarchConfig } from './monarch-config';
@@ -1418,6 +1419,77 @@ export class Monarch {
    */
   clearPersistentEvents(collection?: string): void {
     return this.changeStreams.clearPersistentEvents(collection);
+  }
+
+  // ===== CONCURRENCY & PERFORMANCE METHODS =====
+
+  /**
+   * Get concurrency statistics
+   */
+  getConcurrencyStats(): any {
+    return globalConcurrencyManager.getStats();
+  }
+
+  /**
+   * Reset concurrency manager
+   */
+  resetConcurrencyManager(): void {
+    globalConcurrencyManager.reset();
+  }
+
+  /**
+   * Manually trigger circuit breaker
+   */
+  openCircuitBreaker(): void {
+    globalConcurrencyManager.openCircuitBreaker();
+  }
+
+  /**
+   * Close circuit breaker
+   */
+  closeCircuitBreaker(): void {
+    globalConcurrencyManager.closeCircuitBreaker();
+  }
+
+  // ===== IMPROVED BULK OPERATIONS =====
+
+  /**
+   * Bulk insert documents with improved concurrency and error handling
+   */
+  async bulkInsert(collectionName: string, documents: any[], options?: any): Promise<any> {
+    const collection = this.collectionManager.getCollection(collectionName);
+    if (!collection) {
+      throw new ValidationError(
+        ERROR_MESSAGES.COLLECTION_NOT_FOUND(collectionName),
+        'collectionName',
+        collectionName
+      );
+    }
+    return collection.insertMany(documents, options);
+  }
+
+  /**
+   * Get system health status
+   */
+  getSystemHealth(): {
+    collections: number;
+    totalDocuments: number;
+    memoryUsage: number;
+    activeOperations: number;
+    circuitBreakerOpen: boolean;
+    uptime: number;
+  } {
+    const stats = this.getStats();
+    const concurrencyStats = this.getConcurrencyStats();
+
+    return {
+      collections: stats.collectionCount,
+      totalDocuments: stats.totalDocuments,
+      memoryUsage: process.memoryUsage().heapUsed,
+      activeOperations: concurrencyStats.activeOperations,
+      circuitBreakerOpen: concurrencyStats.circuitBreakerOpen,
+      uptime: Date.now() - (this as any).startTime || 0
+    };
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

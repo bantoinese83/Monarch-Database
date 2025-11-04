@@ -24,10 +24,12 @@ export interface UpdateOperation {
 }
 
 export interface BulkInsertOptions {
-  batchSize?: number; // Number of documents to process per batch (default: 5000)
+  batchSize?: number; // Number of documents to process per batch (default: 10000)
   skipValidation?: boolean; // Skip document validation for performance (default: false)
   emitEvents?: boolean; // Emit change events for each inserted document (default: true)
-  timeout?: number; // Timeout in milliseconds for the entire operation (default: 300000)
+  timeout?: number; // Timeout in milliseconds for the entire operation (default: 600000)
+  priority?: number; // Operation priority for concurrency control (default: 0)
+  continueOnError?: boolean; // Continue processing even if some documents fail (default: false)
 }
 
 export interface BulkInsertResult {

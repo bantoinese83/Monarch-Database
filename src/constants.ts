@@ -7,28 +7,42 @@
 
 export const LIMITS = {
   // Document limits
-  MAX_DOCUMENT_SIZE: 10 * 1024 * 1024, // 10MB per document
-  MAX_COLLECTION_SIZE: 100 * 1024 * 1024, // 100MB per collection
-  MAX_DOCUMENTS_PER_COLLECTION: 100000,
-  MAX_DOCUMENTS_PER_OPERATION: 10000, // 10k documents per batch
-  
+  MAX_DOCUMENT_SIZE: 50 * 1024 * 1024, // 50MB per document (increased for flexibility)
+  MAX_COLLECTION_SIZE: 1024 * 1024 * 1024, // 1GB per collection (increased)
+  MAX_DOCUMENTS_PER_COLLECTION: 1000000, // 1M documents per collection
+  MAX_DOCUMENTS_PER_OPERATION: 50000, // 50k documents per batch (increased)
+
   // Naming limits
   MAX_FIELD_NAME_LENGTH: 255,
   MAX_COLLECTION_NAME_LENGTH: 100,
-  
+
   // Query limits
-  MAX_QUERY_DEPTH: 10, // Maximum nested query depth
-  MAX_QUERY_OPERATORS: 20,
-  MAX_QUERY_SIZE: 1024 * 1024, // 1MB limit for query objects
-  MAX_QUERY_RESULT_CACHE_SIZE: 1000, // Don't cache results larger than this
-  
-  // Transaction limits
-  MAX_COLLECTIONS_PER_DB: 100,
-  MAX_INDICES_PER_COLLECTION: 10,
-  
+  MAX_QUERY_DEPTH: 20, // Increased nested query depth
+  MAX_QUERY_OPERATORS: 50, // Increased operator limit
+  MAX_QUERY_SIZE: 10 * 1024 * 1024, // 10MB limit for query objects
+  MAX_QUERY_RESULT_CACHE_SIZE: 10000, // Increased cache size
+
+  // Database limits
+  MAX_COLLECTIONS_PER_DB: 1000, // Increased from 100 to 1000 for testing
+  MAX_INDICES_PER_COLLECTION: 20, // Increased index limit
+
+  // Concurrent operation limits
+  MAX_CONCURRENT_OPERATIONS: 100, // Max concurrent operations
+  MAX_OPERATIONS_PER_SECOND: 10000, // Rate limiting (ops/sec)
+  CIRCUIT_BREAKER_THRESHOLD: 0.8, // Circuit breaker activation threshold
+
   // Serialization limits
-  MAX_DATABASE_SAVE_SIZE: 50 * 1024 * 1024, // 50MB
-  MAX_DATABASE_LOAD_SIZE: 100 * 1024 * 1024, // 100MB
+  MAX_DATABASE_SAVE_SIZE: 10 * 1024 * 1024 * 1024, // 10GB (increased)
+  MAX_DATABASE_LOAD_SIZE: 20 * 1024 * 1024 * 1024, // 20GB (increased)
+
+  // Memory limits
+  MAX_MEMORY_USAGE: 2048 * 1024 * 1024, // 2GB memory limit
+  MAX_CACHE_SIZE: 500 * 1024 * 1024, // 500MB cache limit
+
+  // Timeout limits
+  DEFAULT_OPERATION_TIMEOUT: 30000, // 30 seconds
+  BULK_OPERATION_TIMEOUT: 600000, // 10 minutes for bulk ops
+  CONNECTION_TIMEOUT: 5000, // 5 seconds
 } as const;
 
 export const ERROR_MESSAGES = {
@@ -110,5 +124,22 @@ export const ERROR_MESSAGES = {
   
   // Query Engine
   QUERY_ENGINE_INVALID_PARAMS: 'Invalid parameters for query execution',
+
+  // Concurrency and Performance
+  CONCURRENT_OPERATIONS_EXCEEDED: (current: number, max: number) =>
+    `Concurrent operations limit exceeded: ${current}/${max} operations active`,
+  RATE_LIMIT_EXCEEDED: (current: number, max: number) =>
+    `Rate limit exceeded: ${current.toFixed(1)}/${max} operations per second`,
+  CIRCUIT_BREAKER_OPEN: 'Circuit breaker is open due to high failure rate - operations temporarily blocked',
+  CIRCUIT_BREAKER_ACTIVATED: (failures: number, threshold: number) =>
+    `Circuit breaker activated: ${failures} recent failures exceeded ${(threshold * 100).toFixed(0)}% threshold`,
+  OPERATION_TIMEOUT: (operation: string, timeout: number) =>
+    `Operation '${operation}' timed out after ${timeout}ms`,
+  BULK_OPERATION_PARTIAL_FAILURE: (success: number, failed: number, total: number) =>
+    `Bulk operation completed with partial failure: ${success}/${total} successful, ${failed} failed`,
+  MEMORY_LIMIT_EXCEEDED: (current: number, max: number) =>
+    `Memory limit exceeded: ${(current / 1024 / 1024).toFixed(1)}MB used, ${(max / 1024 / 1024).toFixed(1)}MB limit`,
+  SYSTEM_OVERLOAD: 'System temporarily overloaded - please retry later',
+  RESOURCE_CONTENTION: 'Resource contention detected - operation queued for later execution',
 } as const;
 
