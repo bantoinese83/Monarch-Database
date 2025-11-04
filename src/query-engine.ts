@@ -117,10 +117,10 @@ export class QueryEngine {
   private matchesQuery(doc: Document, query: Query): boolean {
     // Handle top-level logical operators
     if (query.$and) {
-      return query.$and.every(subQuery => this.matchesQuery(doc, subQuery));
+      return query.$and.every((subQuery: Query) => this.matchesQuery(doc, subQuery));
     }
     if (query.$or) {
-      return query.$or.some(subQuery => this.matchesQuery(doc, subQuery));
+      return query.$or.some((subQuery: Query) => this.matchesQuery(doc, subQuery));
     }
 
     // Handle regular field conditions

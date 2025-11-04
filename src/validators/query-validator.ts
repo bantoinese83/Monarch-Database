@@ -66,7 +66,7 @@ export class QueryValidator {
         if (Array.isArray(value)) {
           // Recursively validate each subquery in the array
           for (const subQuery of value) {
-            this.validateOperatorsRecursive(subQuery);
+            this.validateOperatorsRecursive(subQuery as unknown);
           }
         }
       } else if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
