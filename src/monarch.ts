@@ -1476,7 +1476,11 @@ export class Monarch {
     totalDocuments: number;
     memoryUsage: number;
     activeOperations: number;
+    queuedOperations: number;
     circuitBreakerOpen: boolean;
+    averageOperationTime: number;
+    maxQueuedTime: number;
+    operationsPerSecond: Record<string, number>;
     uptime: number;
   } {
     const stats = this.getStats();
@@ -1487,7 +1491,11 @@ export class Monarch {
       totalDocuments: stats.totalDocuments,
       memoryUsage: process.memoryUsage().heapUsed,
       activeOperations: concurrencyStats.activeOperations,
+      queuedOperations: concurrencyStats.queuedOperations,
       circuitBreakerOpen: concurrencyStats.circuitBreakerOpen,
+      averageOperationTime: concurrencyStats.averageOperationTime,
+      maxQueuedTime: concurrencyStats.maxQueuedTime,
+      operationsPerSecond: concurrencyStats.operationsPerSecond,
       uptime: Date.now() - (this as any).startTime || 0
     };
   }

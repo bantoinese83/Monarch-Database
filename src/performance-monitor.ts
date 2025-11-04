@@ -44,14 +44,26 @@ export class PerformanceMonitor {
       return;
     }
 
-    // Prevent unbounded growth
+    // Prevent unbounded growth - use more aggressive cleanup for rapid operations
     if (this.operations.size >= this.maxOperations) {
-      logger.warn('Performance monitor: too many concurrent operations, skipping');
-      return;
+      // Clean up before checking again
+      this.cleanupTimedOutOperations();
+
+      // If still too many operations, skip this one
+      if (this.operations.size >= this.maxOperations) {
+        logger.warn('Performance monitor: too many concurrent operations, skipping', {
+          current: this.operations.size,
+          max: this.maxOperations,
+          operation
+        });
+        return;
+      }
     }
 
-    // Clean up timed out operations
-    this.cleanupTimedOutOperations();
+    // Only cleanup every 100 operations to reduce overhead during rapid operations
+    if (this.operations.size % 100 === 0) {
+      this.cleanupTimedOutOperations();
+    }
 
     this.operations.set(operation, {
       startTime: performance.now(),

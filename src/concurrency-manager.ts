@@ -6,7 +6,13 @@ import { logger } from './logger';
  * Handles concurrent operations, rate limiting, and circuit breaker patterns
  */
 export class ConcurrencyManager {
-  private activeOperations = new Map<string, Promise<any>>();
+  private activeOperations = new Map<string, {
+    promise: Promise<any>;
+    startTime: number;
+    timeout: number;
+    resolve: (value: any) => void;
+    reject: (error: any) => void;
+  }>();
   private operationCounts = new Map<string, number>();
   private lastResetTime = Date.now();
   private circuitBreakerOpen = false;
@@ -18,7 +24,24 @@ export class ConcurrencyManager {
     resolve: (value: any) => void;
     reject: (error: any) => void;
     priority: number;
+    queuedTime: number;
   }> = [];
+  private cleanupInterval: NodeJS.Timeout | null = null;
+
+  constructor() {
+    // Start periodic cleanup to prevent memory leaks
+    this.cleanupInterval = setInterval(() => {
+      this.cleanupCompletedOperations();
+      this.cleanupExpiredQueuedOperations();
+    }, 1000); // Clean up every second
+
+    // Ensure cleanup on process exit
+    if (typeof process !== 'undefined' && process.on) {
+      process.on('exit', () => this.cleanup());
+      process.on('SIGINT', () => this.cleanup());
+      process.on('SIGTERM', () => this.cleanup());
+    }
+  }
 
   /**
    * Execute operation with concurrency control
@@ -69,6 +92,8 @@ export class ConcurrencyManager {
     operationsPerSecond: Record<string, number>;
     circuitBreakerOpen: boolean;
     circuitBreakerFailures: number;
+    averageOperationTime: number;
+    maxQueuedTime: number;
   } {
     const operationsPerSecond: Record<string, number> = {};
     const timeSinceReset = (Date.now() - this.lastResetTime) / 1000;
@@ -77,12 +102,31 @@ export class ConcurrencyManager {
       operationsPerSecond[operation] = timeSinceReset > 0 ? count / timeSinceReset : 0;
     }
 
+    // Calculate average operation time for active operations
+    let totalTime = 0;
+    let operationCount = 0;
+    const now = Date.now();
+
+    for (const operation of this.activeOperations.values()) {
+      totalTime += (now - operation.startTime);
+      operationCount++;
+    }
+
+    const averageOperationTime = operationCount > 0 ? totalTime / operationCount : 0;
+
+    // Calculate max queued time
+    const maxQueuedTime = this.operationQueue.length > 0
+      ? Math.max(...this.operationQueue.map(op => now - op.queuedTime))
+      : 0;
+
     return {
       activeOperations: this.activeOperations.size,
       queuedOperations: this.operationQueue.length,
       operationsPerSecond,
       circuitBreakerOpen: this.circuitBreakerOpen,
-      circuitBreakerFailures: this.circuitBreakerFailures
+      circuitBreakerFailures: this.circuitBreakerFailures,
+      averageOperationTime,
+      maxQueuedTime
     };
   }
 
@@ -90,12 +134,91 @@ export class ConcurrencyManager {
    * Reset operation counters and circuit breaker
    */
   reset(): void {
+    // Cancel all pending operations
+    for (const [operationId, operation] of this.activeOperations) {
+      try {
+        operation.reject(new Error('Operation cancelled due to reset'));
+      } catch (error) {
+        // Ignore errors during cancellation
+      }
+    }
+
+    // Clear all queues and maps
+    this.activeOperations.clear();
     this.operationCounts.clear();
+    this.operationQueue.length = 0;
     this.lastResetTime = Date.now();
     this.circuitBreakerOpen = false;
     this.circuitBreakerFailures = 0;
     this.circuitBreakerLastFailure = 0;
-    logger.info('Concurrency manager reset');
+
+    logger.info('Concurrency manager reset - all operations cancelled');
+  }
+
+  /**
+   * Clean up completed operations to prevent memory leaks
+   */
+  private cleanupCompletedOperations(): void {
+    // This method is called periodically to ensure cleanup
+    // The actual cleanup happens in the promise handlers
+    const now = Date.now();
+    let cleaned = 0;
+
+    // Check for timed out operations
+    for (const [operationId, operation] of this.activeOperations) {
+      if (now - operation.startTime > operation.timeout) {
+        try {
+          operation.reject(new Error(`Operation timed out after ${operation.timeout}ms`));
+          this.activeOperations.delete(operationId);
+          cleaned++;
+        } catch (error) {
+          // Ignore errors during cleanup
+        }
+      }
+    }
+
+    if (cleaned > 0) {
+      logger.debug(`Cleaned up ${cleaned} timed out operations`);
+    }
+  }
+
+  /**
+   * Clean up expired queued operations
+   */
+  private cleanupExpiredQueuedOperations(): void {
+    const now = Date.now();
+    const maxQueueTime = 300000; // 5 minutes max queue time
+    const initialLength = this.operationQueue.length;
+
+    this.operationQueue = this.operationQueue.filter(queuedOp => {
+      if (now - queuedOp.queuedTime > maxQueueTime) {
+        try {
+          queuedOp.reject(new Error('Operation expired in queue'));
+          return false;
+        } catch (error) {
+          return false;
+        }
+      }
+      return true;
+    });
+
+    const cleaned = initialLength - this.operationQueue.length;
+    if (cleaned > 0) {
+      logger.warn(`Cleaned up ${cleaned} expired queued operations`);
+    }
+  }
+
+  /**
+   * Cleanup method for graceful shutdown
+   */
+  private cleanup(): void {
+    if (this.cleanupInterval) {
+      clearInterval(this.cleanupInterval);
+      this.cleanupInterval = null;
+    }
+
+    // Cancel all pending operations
+    this.reset();
   }
 
   /**
@@ -122,27 +245,44 @@ export class ConcurrencyManager {
     timeout: number,
     bypassLimits: boolean
   ): Promise<T> {
-    const operationPromise = this.wrapWithTimeout(operation, timeout);
+    return new Promise<T>((resolve, reject) => {
+      const startTime = Date.now();
+      const operationPromise = this.wrapWithTimeout(operation, timeout);
 
-    this.activeOperations.set(operationId, operationPromise);
-    this.recordOperation(operationId);
+      // Store operation with metadata
+      this.activeOperations.set(operationId, {
+        promise: operationPromise,
+        startTime,
+        timeout,
+        resolve,
+        reject
+      });
 
-    try {
-      const result = await operationPromise;
+      this.recordOperation(operationId);
 
-      // Success - reset circuit breaker failures
-      if (this.circuitBreakerFailures > 0) {
-        this.circuitBreakerFailures = Math.max(0, this.circuitBreakerFailures - 1);
-      }
+      // Handle promise completion
+      operationPromise
+        .then((result) => {
+          // Remove from active operations
+          this.activeOperations.delete(operationId);
 
-      return result;
-    } catch (error) {
-      this.handleOperationFailure(operationId, error as Error, bypassLimits);
-      throw error;
-    } finally {
-      this.activeOperations.delete(operationId);
-      this.processQueuedOperations();
-    }
+          // Success - reset circuit breaker failures
+          if (this.circuitBreakerFailures > 0) {
+            this.circuitBreakerFailures = Math.max(0, this.circuitBreakerFailures - 1);
+          }
+
+          resolve(result);
+          this.processQueuedOperations();
+        })
+        .catch((error) => {
+          // Remove from active operations
+          this.activeOperations.delete(operationId);
+
+          this.handleOperationFailure(operationId, error as Error, bypassLimits);
+          reject(error);
+          this.processQueuedOperations();
+        });
+    });
   }
 
   private queueOperation<T>(
@@ -157,7 +297,8 @@ export class ConcurrencyManager {
         operation: operation as () => Promise<any>,
         resolve,
         reject,
-        priority
+        priority,
+        queuedTime: Date.now()
       });
 
       // Sort by priority (higher priority first)
