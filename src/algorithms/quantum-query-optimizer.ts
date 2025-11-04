@@ -521,3 +521,8 @@ export class QuantumQueryOptimizer {
 
 // Export singleton instance
 export const quantumQueryOptimizer = new QuantumQueryOptimizer();
+
+// Factory function for testing (creates fresh instances)
+export function createQuantumQueryOptimizer(): QuantumQueryOptimizer {
+  return new QuantumQueryOptimizer();
+}

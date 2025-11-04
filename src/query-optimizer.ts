@@ -3,6 +3,12 @@ import { QuantumQueryOptimizer, quantumQueryOptimizer } from './algorithms/quant
 
 export class QueryOptimizer {
   private quantumEnabled = false;
+  private quantumOptimizer: any; // Allow injection for testing
+
+  constructor(quantumEnabled: boolean = false, quantumOptimizer?: any) {
+    this.quantumEnabled = quantumEnabled;
+    this.quantumOptimizer = quantumOptimizer || quantumQueryOptimizer;
+  }
 
   /**
    * Enable or disable quantum optimization
@@ -249,7 +255,7 @@ export class QueryOptimizer {
   ): Promise<QueryPlan> {
     try {
       // Use quantum query optimizer
-      const quantumResult = await quantumQueryOptimizer.optimizeQuery(query);
+      const quantumResult = await this.quantumOptimizer.optimizeQuery(query);
 
       // Convert quantum result to standard QueryPlan format
       const plan: QueryPlan = {

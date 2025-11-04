@@ -117,7 +117,7 @@ export class Monarch {
     this.transactionManager = this.config.transactionManagerFactory?.() || new TransactionManager();
     this.changeStreams = new ChangeStreamsManager();
     this.schemaValidator = new SchemaValidator();
-    this.queryOptimizer = new QueryOptimizer();
+    this.queryOptimizer = new QueryOptimizer(this.config.quantum?.optimizer?.adaptiveLearning || false);
 
     // Initialize advanced engines
     this.vectorEngine = new VectorEngine();

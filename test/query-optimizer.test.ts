@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { Monarch } from '../src';
+import { createQuantumQueryOptimizer } from '../src/algorithms/quantum-query-optimizer';
 
 describe('Query Optimization', () => {
   let db: Monarch;
@@ -7,6 +8,8 @@ describe('Query Optimization', () => {
 
   beforeEach(() => {
     db = new Monarch();
+    // Disable quantum optimization for consistent test results
+    db.queryOptimizer.enableQuantumOptimization(false);
     users = db.addCollection('users');
 
     // Insert test data
@@ -23,37 +26,46 @@ describe('Query Optimization', () => {
   });
 
   describe('Query Plan Generation', () => {
-    it('should generate plan for simple equality query', () => {
+    it('should generate plan for simple equality query', async () => {
       const query = { name: 'John' };
-      const plan = db.analyzeQuery('users', query);
+      try {
+        const plan = await db.analyzeQuery('users', query);
+        console.log('Plan result:', plan);
 
-      expect(plan.collection).toBe('users');
-      expect(plan.query).toEqual(query);
-      expect(plan.indexUsed).toBe('name');
-      expect(plan.estimatedCost).toBeGreaterThan(0);
-      expect(plan.estimatedResults).toBeGreaterThan(0);
-      expect(plan.executionSteps).toBeDefined();
+        expect(plan).toBeDefined();
+        expect(plan.collection).toBe('users');
+        expect(plan.query).toEqual(query);
+        expect(plan.indexUsed).toBe('name');
+        expect(plan.estimatedCost).toBeGreaterThan(0);
+        expect(plan.estimatedResults).toBeGreaterThan(0);
+        expect(plan.executionSteps).toBeDefined();
+      } catch (error) {
+        console.error('analyzeQuery failed:', error);
+        throw error;
+      }
     });
 
-    it('should generate plan for range query', () => {
+    it('should generate plan for range query', async () => {
       const query = { age: { $gte: 25, $lt: 35 } };
-      const plan = db.analyzeQuery('users', query);
+      const plan = await db.analyzeQuery('users', query);
 
+      expect(plan).toBeDefined();
       expect(plan.collection).toBe('users');
       expect(plan.indexUsed).toBeUndefined(); // No index on age
       expect(plan.executionSteps.some(step => step.type === 'scan')).toBe(true);
     });
 
-    it('should prefer better index for compound queries', () => {
+    it('should prefer better index for compound queries', async () => {
       const query = { name: 'John', city: 'NYC' };
-      const plan = db.analyzeQuery('users', query);
+      const plan = await db.analyzeQuery('users', query);
 
+      expect(plan).toBeDefined();
       expect(plan.indexUsed).toBeDefined();
       // Should choose one of the available indices
       expect(['name', 'city']).toContain(plan.indexUsed);
     });
 
-    it('should handle complex queries', () => {
+    it('should handle complex queries', async () => {
       const query = {
         $and: [
           { age: { $gte: 25 } },
@@ -61,8 +73,9 @@ describe('Query Optimization', () => {
         ]
       };
 
-      const plan = db.analyzeQuery('users', query);
+      const plan = await db.analyzeQuery('users', query);
 
+      expect(plan).toBeDefined();
       expect(plan.collection).toBe('users');
       expect(plan.estimatedCost).toBeGreaterThan(0);
     });
@@ -100,31 +113,36 @@ describe('Query Optimization', () => {
   });
 
   describe('Cost Estimation', () => {
-    it('should estimate lower cost for indexed queries', () => {
+    it('should estimate lower cost for indexed queries', async () => {
       const indexedQuery = { name: 'John' };
       const nonIndexedQuery = { age: 30 };
 
-      const indexedPlan = db.analyzeQuery('users', indexedQuery);
-      const nonIndexedPlan = db.analyzeQuery('users', nonIndexedQuery);
+      const indexedPlan = await db.analyzeQuery('users', indexedQuery);
+      const nonIndexedPlan = await db.analyzeQuery('users', nonIndexedQuery);
 
+      expect(indexedPlan).toBeDefined();
+      expect(nonIndexedPlan).toBeDefined();
       expect(indexedPlan.estimatedCost).toBeLessThan(nonIndexedPlan.estimatedCost);
     });
 
-    it('should estimate result counts', () => {
+    it('should estimate result counts', async () => {
       const indexedQuery = { name: 'John' }; // Uses index
       const nonIndexedQuery = { age: 30 }; // No index on age
 
-      const indexedPlan = db.analyzeQuery('users', indexedQuery);
-      const nonIndexedPlan = db.analyzeQuery('users', nonIndexedQuery);
+      const indexedPlan = await db.analyzeQuery('users', indexedQuery);
+      const nonIndexedPlan = await db.analyzeQuery('users', nonIndexedQuery);
 
+      expect(indexedPlan).toBeDefined();
+      expect(nonIndexedPlan).toBeDefined();
       // Indexed query should have better selectivity
       expect(indexedPlan.estimatedResults).toBeLessThanOrEqual(nonIndexedPlan.estimatedResults);
     });
 
-    it('should include multiple execution steps', () => {
+    it('should include multiple execution steps', async () => {
       const complexQuery = { name: 'John', age: { $gte: 25 } };
-      const plan = db.analyzeQuery('users', complexQuery);
+      const plan = await db.analyzeQuery('users', complexQuery);
 
+      expect(plan).toBeDefined();
       expect(plan.executionSteps.length).toBeGreaterThan(1);
       expect(plan.executionSteps.some(step => step.type === 'index-lookup')).toBe(true);
       expect(plan.executionSteps.some(step => step.type === 'filter')).toBe(true);
@@ -132,72 +150,80 @@ describe('Query Optimization', () => {
   });
 
   describe('Execution Step Analysis', () => {
-    it('should identify scan operations', () => {
+    it('should identify scan operations', async () => {
       const query = {}; // Empty query requires full scan
-      const plan = db.analyzeQuery('users', query);
+      const plan = await db.analyzeQuery('users', query);
 
+      expect(plan).toBeDefined();
       const scanStep = plan.executionSteps.find(step => step.type === 'scan');
       expect(scanStep).toBeDefined();
       expect(scanStep!.cost).toBeGreaterThan(0);
       expect(scanStep!.selectivity).toBe(1.0);
     });
 
-    it('should identify index operations', () => {
+    it('should identify index operations', async () => {
       const query = { name: 'John' };
-      const plan = db.analyzeQuery('users', query);
+      const plan = await db.analyzeQuery('users', query);
 
+      expect(plan).toBeDefined();
       const indexStep = plan.executionSteps.find(step => step.type === 'index-lookup');
       expect(indexStep).toBeDefined();
       expect(indexStep!.cost).toBeGreaterThan(0);
       expect(indexStep!.selectivity).toBeLessThan(1.0);
     });
 
-    it('should include sorting when needed', () => {
+    it('should include sorting when needed', async () => {
       const query = { $orderby: { age: 1 } };
-      const plan = db.analyzeQuery('users', query);
+      const plan = await db.analyzeQuery('users', query);
 
+      expect(plan).toBeDefined();
       const sortStep = plan.executionSteps.find(step => step.type === 'sort');
       expect(sortStep).toBeDefined();
     });
 
-    it('should include limiting when needed', () => {
+    it('should include limiting when needed', async () => {
       const query = { $limit: 2 };
-      const plan = db.analyzeQuery('users', query);
+      const plan = await db.analyzeQuery('users', query);
 
+      expect(plan).toBeDefined();
       const limitStep = plan.executionSteps.find(step => step.type === 'limit');
       expect(limitStep).toBeDefined();
     });
   });
 
   describe('Index Selection Logic', () => {
-    it('should choose the most selective index', () => {
+    it('should choose the most selective index', async () => {
       // Add another index
       users.createIndex('age');
 
       // Query that could use either name or age index
       const query = { name: 'John', age: 30 };
-      const plan = db.analyzeQuery('users', query);
+      const plan = await db.analyzeQuery('users', query);
 
+      expect(plan).toBeDefined();
       // Should choose an index
       expect(plan.indexUsed).toBeDefined();
       expect(['name', 'age', 'city']).toContain(plan.indexUsed);
     });
 
-    it('should calculate index costs correctly', () => {
+    it('should calculate index costs correctly', async () => {
       const equalityQuery = { name: 'John' };
       const rangeQuery = { age: { $gte: 25 } };
 
-      const equalityPlan = db.analyzeQuery('users', equalityQuery);
-      const rangePlan = db.analyzeQuery('users', rangeQuery);
+      const equalityPlan = await db.analyzeQuery('users', equalityQuery);
+      const rangePlan = await db.analyzeQuery('users', rangeQuery);
 
+      expect(equalityPlan).toBeDefined();
+      expect(rangePlan).toBeDefined();
       // Equality should be cheaper than range
       expect(equalityPlan.estimatedCost).toBeLessThan(rangePlan.estimatedCost);
     });
 
-    it('should handle queries with no viable index', () => {
+    it('should handle queries with no viable index', async () => {
       const query = { nonexistentField: 'value' };
-      const plan = db.analyzeQuery('users', query);
+      const plan = await db.analyzeQuery('users', query);
 
+      expect(plan).toBeDefined();
       expect(plan.indexUsed).toBeUndefined();
       expect(plan.executionSteps.some(step => step.type === 'scan')).toBe(true);
     });

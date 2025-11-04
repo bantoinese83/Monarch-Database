@@ -10,19 +10,19 @@ import { LIMITS, ERROR_MESSAGES } from '../src/constants';
 describe('LIMITS', () => {
   it('should export all limit constants', () => {
     expect(LIMITS).toBeDefined();
-    expect(LIMITS.MAX_DOCUMENT_SIZE).toBe(10 * 1024 * 1024);
-    expect(LIMITS.MAX_COLLECTION_SIZE).toBe(100 * 1024 * 1024);
-    expect(LIMITS.MAX_DOCUMENTS_PER_COLLECTION).toBe(100000);
-    expect(LIMITS.MAX_DOCUMENTS_PER_OPERATION).toBe(10000);
+    expect(LIMITS.MAX_DOCUMENT_SIZE).toBe(50 * 1024 * 1024); // Increased for flexibility
+    expect(LIMITS.MAX_COLLECTION_SIZE).toBe(1024 * 1024 * 1024); // 1GB per collection
+    expect(LIMITS.MAX_DOCUMENTS_PER_COLLECTION).toBe(1000000); // 1M documents
+    expect(LIMITS.MAX_DOCUMENTS_PER_OPERATION).toBe(50000); // 50k per operation
     expect(LIMITS.MAX_FIELD_NAME_LENGTH).toBe(255);
     expect(LIMITS.MAX_COLLECTION_NAME_LENGTH).toBe(100);
-    expect(LIMITS.MAX_QUERY_DEPTH).toBe(10);
-    expect(LIMITS.MAX_QUERY_OPERATORS).toBe(20);
-    expect(LIMITS.MAX_QUERY_SIZE).toBe(1024 * 1024);
-    expect(LIMITS.MAX_COLLECTIONS_PER_DB).toBe(100);
-    expect(LIMITS.MAX_INDICES_PER_COLLECTION).toBe(10);
-    expect(LIMITS.MAX_DATABASE_SAVE_SIZE).toBe(50 * 1024 * 1024);
-    expect(LIMITS.MAX_DATABASE_LOAD_SIZE).toBe(100 * 1024 * 1024);
+    expect(LIMITS.MAX_QUERY_DEPTH).toBe(20); // Increased depth
+    expect(LIMITS.MAX_QUERY_OPERATORS).toBe(50); // Increased operators
+    expect(LIMITS.MAX_QUERY_SIZE).toBe(10 * 1024 * 1024); // 10MB queries
+    expect(LIMITS.MAX_COLLECTIONS_PER_DB).toBe(1000); // Increased to 1000
+    expect(LIMITS.MAX_INDICES_PER_COLLECTION).toBe(20); // Increased indices
+    expect(LIMITS.MAX_DATABASE_SAVE_SIZE).toBe(10 * 1024 * 1024 * 1024); // 10GB
+    expect(LIMITS.MAX_DATABASE_LOAD_SIZE).toBe(20 * 1024 * 1024 * 1024); // 20GB
   });
 
   it('should have positive limit values', () => {
