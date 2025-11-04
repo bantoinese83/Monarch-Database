@@ -237,7 +237,7 @@ const db = new Monarch();
 const users = db.addCollection('users');
 await users.insert({ name: 'Alice', age: 30 });
 const user = await users.findOne({ name: 'Alice' });
-await users.update({ name: 'Alice' }, { $set: { age: 31 } });
+await users.update({ name: 'Alice' }, { age: 31 });
 
 // Key-Value (like Redis)
 await db.set('session:123', { userId: 123, expires: Date.now() });
@@ -510,7 +510,7 @@ async function placeOrder(userId, items) {
   for (const item of items) {
     await inventory.update(
       { productId: item.productId },
-      { $inc: { reserved: item.quantity } }
+      { reserved: item.quantity } // Note: Use remove+insert for complex updates
     );
   }
 
@@ -590,8 +590,75 @@ await users.insert([doc1, doc2]);       // Insert multiple documents
 await users.find(query);                // Find documents
 await users.findOne(query);             // Find one document
 await users.update(query, update);      // Update documents
-await users.delete(query);              // Delete documents
+await users.remove(query);             // Remove documents
 await users.count(query);               // Count documents
+
+### Update Patterns
+
+Monarch Database supports **shallow updates only** - you cannot update nested objects directly.
+
+#### ✅ Supported Update Patterns
+
+```javascript
+// Direct field updates (primitives, arrays, dates)
+await users.update({ _id: 'user1' }, { age: 31 });
+await users.update({ _id: 'user1' }, { tags: ['admin', 'moderator'] });
+await users.update({ _id: 'user1' }, { lastLogin: new Date() });
+
+// Multiple field updates
+await users.update({ status: 'active' }, {
+  lastActivity: new Date(),
+  loginCount: 5
+});
+```
+
+#### ❌ Unsupported Update Patterns
+
+```javascript
+// Nested object updates (will throw error)
+await users.update({ _id: 'user1' }, {
+  profile: { bio: 'New bio' }  // ❌ ERROR: Nested object updates not supported
+});
+
+// MongoDB-style operators (not implemented)
+await users.update({ _id: 'user1' }, { $set: { age: 31 } });  // ❌ Not supported
+await users.update({ _id: 'user1' }, { $inc: { age: 1 } });   // ❌ Not supported
+```
+
+#### 🔄 Recommended Workaround: Remove + Insert
+
+For complex updates involving nested objects, use the remove + insert pattern:
+
+```javascript
+// 1. Find the current document
+const user = await users.findOne({ _id: 'user1' });
+
+// 2. Create updated version (immutable update)
+const updatedUser = {
+  ...user,
+  profile: {
+    ...user.profile,
+    bio: 'Senior Developer',
+    preferences: {
+      ...user.profile.preferences,
+      theme: 'dark'
+    }
+  },
+  lastUpdated: new Date()
+};
+
+// 3. Remove old document
+await users.remove({ _id: 'user1' });
+
+// 4. Insert updated document
+await users.insert(updatedUser);
+```
+
+This pattern ensures:
+- ✅ Atomic updates within transactions
+- ✅ Full control over nested object updates
+- ✅ Proper index updates
+- ✅ Change stream notifications
 
 // Query Examples
 await users.find({ age: { $gte: 18 } });                    // Age >= 18
