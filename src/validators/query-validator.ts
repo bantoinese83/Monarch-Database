@@ -50,10 +50,30 @@ export class QueryValidator {
    */
   static validateOperators(query: unknown): void {
     if (typeof query !== 'object' || query === null) return;
-    for (const [, value] of Object.entries(query)) {
-      if (typeof value === 'object' && value !== null) {
+
+    this.validateOperatorsRecursive(query);
+  }
+
+  /**
+   * Recursively validate operators, handling logical operators specially
+   */
+  static validateOperatorsRecursive(obj: unknown): void {
+    if (typeof obj !== 'object' || obj === null) return;
+
+    for (const [key, value] of Object.entries(obj)) {
+      // Handle logical operators ($and, $or) - their values are arrays of subqueries
+      if (key === '$and' || key === '$or') {
+        if (Array.isArray(value)) {
+          // Recursively validate each subquery in the array
+          for (const subQuery of value) {
+            this.validateOperatorsRecursive(subQuery);
+          }
+        }
+      } else if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+        // Handle field-level operators
         const operators = Object.keys(value);
-        const invalidOperators = operators.filter(op => !this.isValidOperator(op));
+        const actualOperators = operators.filter(op => op.startsWith('$'));
+        const invalidOperators = actualOperators.filter(op => !this.isValidOperator(op));
 
         if (invalidOperators.length > 0) {
           throw new ValidationError(
@@ -62,6 +82,11 @@ export class QueryValidator {
             invalidOperators
           );
         }
+      }
+
+      // Recursively validate nested objects
+      if (typeof value === 'object' && value !== null) {
+        this.validateOperatorsRecursive(value);
       }
     }
   }
@@ -109,7 +134,10 @@ export class QueryValidator {
    * Check if an operator is valid
    */
   static isValidOperator(operator: string): boolean {
-    const validOperators = ['$gt', '$gte', '$lt', '$lte', '$ne', '$in', '$nin', '$eq', '$regex'];
+    const validOperators = [
+      '$gt', '$gte', '$lt', '$lte', '$ne', '$in', '$nin', '$eq', '$regex',
+      '$exists', '$all', '$size', '$and', '$or'
+    ];
     return validOperators.includes(operator);
   }
 

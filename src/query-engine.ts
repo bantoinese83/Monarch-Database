@@ -106,17 +106,27 @@ export class QueryEngine {
 
   /**
    * Check if a document matches the query
-   * 
+   *
    * Implements AND logic: all query conditions must match.
    * Short-circuits on first non-matching condition for performance.
-   * 
+   *
    * @param doc - Document to check
    * @param query - Query object with field conditions
    * @returns true if document matches all query conditions
    */
   private matchesQuery(doc: Document, query: Query): boolean {
+    // Handle top-level logical operators
+    if (query.$and) {
+      return query.$and.every(subQuery => this.matchesQuery(doc, subQuery));
+    }
+    if (query.$or) {
+      return query.$or.some(subQuery => this.matchesQuery(doc, subQuery));
+    }
+
+    // Handle regular field conditions
     for (const [field, condition] of Object.entries(query)) {
-      if (!this.matchesCondition(doc[field], condition)) {
+      const value = this.getNestedValue(doc, field);
+      if (!this.matchesCondition(value, condition)) {
         return false;
       }
     }
@@ -125,10 +135,10 @@ export class QueryEngine {
 
   /**
    * Check if a value matches a condition
-   * 
+   *
    * Handles both simple equality and operator-based conditions.
    * Operators are evaluated using evaluateOperators().
-   * 
+   *
    * @param value - Document field value
    * @param condition - Query condition (simple value or operator object)
    * @returns true if value matches condition
@@ -139,13 +149,13 @@ export class QueryEngine {
       return this.evaluateOperators(value, condition);
     } else {
       // Simple equality match
-      return value === condition;
+      return this.deepEqual(value, condition);
     }
   }
 
   /**
    * Evaluate query operators against a value
-   * 
+   *
    * @param value - Document field value
    * @param operators - Object containing operator conditions
    * @returns true if all operators match, false otherwise
@@ -154,6 +164,9 @@ export class QueryEngine {
   private evaluateOperators(value: any, operators: { [key: string]: any }): boolean {
     for (const [operator, operand] of Object.entries(operators)) {
       switch (operator) {
+        case '$eq':
+          if (!this.deepEqual(value, operand)) return false;
+          break;
         case '$gt':
           if (!(value > operand)) return false;
           break;
@@ -167,13 +180,29 @@ export class QueryEngine {
           if (!(value <= operand)) return false;
           break;
         case '$ne':
-          if (!(value !== operand)) return false;
+          if (this.deepEqual(value, operand)) return false;
           break;
         case '$in':
-          if (!Array.isArray(operand) || !operand.includes(value)) return false;
+          if (!Array.isArray(operand) || !operand.some(item => this.deepEqual(value, item))) return false;
           break;
         case '$nin':
-          if (!Array.isArray(operand) || operand.includes(value)) return false;
+          if (!Array.isArray(operand) || operand.some(item => this.deepEqual(value, item))) return false;
+          break;
+        case '$regex':
+          const regex = operand instanceof RegExp ? operand : new RegExp(operand);
+          if (typeof value !== 'string' || !regex.test(value)) return false;
+          break;
+        case '$exists':
+          const shouldExist = operand;
+          const actuallyExists = value !== undefined;
+          if (shouldExist !== actuallyExists) return false;
+          break;
+        case '$all':
+          if (!Array.isArray(value) || !Array.isArray(operand)) return false;
+          if (!operand.every(item => value.some(val => this.deepEqual(val, item)))) return false;
+          break;
+        case '$size':
+          if (!Array.isArray(value) || value.length !== operand) return false;
           break;
         default:
           throw new ValidationError(
@@ -184,5 +213,39 @@ export class QueryEngine {
       }
     }
     return true;
+  }
+
+  /**
+   * Get nested value from document using dot notation
+   */
+  private getNestedValue(obj: any, path: string): any {
+    return path.split('.').reduce((current, key) => {
+      return current && current[key] !== undefined ? current[key] : undefined;
+    }, obj);
+  }
+
+  /**
+   * Deep equality check for objects and arrays
+   */
+  private deepEqual(a: any, b: any): boolean {
+    if (a === b) return true;
+
+    if (a == null || b == null) return a === b;
+
+    if (Array.isArray(a) && Array.isArray(b)) {
+      if (a.length !== b.length) return false;
+      return a.every((val, idx) => this.deepEqual(val, b[idx]));
+    }
+
+    if (typeof a === 'object' && typeof b === 'object') {
+      const keysA = Object.keys(a);
+      const keysB = Object.keys(b);
+
+      if (keysA.length !== keysB.length) return false;
+
+      return keysA.every(key => keysB.includes(key) && this.deepEqual(a[key], b[key]));
+    }
+
+    return false;
   }
 }
